@@ -1,0 +1,47 @@
+{
+  "exam": {
+    "title": "CBSE Class X Science Demo",
+    "board": "CBSE",
+    "class_level": "X",
+    "subject": "Science",
+    "max_marks": 5
+  },
+  "questions": [
+    {
+      "id": "1",
+      "marks": 1,
+      "type": "mcq",
+      "answer": "C"
+    },
+    {
+      "id": "2",
+      "marks": 2,
+      "type": "short_answer",
+      "answer": "Dispersion occurs when white light splits into its constituent colours while passing through a prism due to different refraction of different wavelengths.",
+      "rubric": [
+        {
+          "id": "splitting",
+          "marks": 1,
+          "description": "Explains that white light splits into colours",
+          "keywords": ["white light", "splits", "colours"],
+          "min_keywords": 2
+        },
+        {
+          "id": "cause",
+          "marks": 1,
+          "description": "Mentions prism/refraction/different wavelengths as the cause",
+          "keywords": ["prism", "refraction", "wavelength"],
+          "min_keywords": 1
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "marks": 2,
+      "type": "numeric",
+      "answer": "9.8",
+      "tolerance": 0.1
+    }
+  ]
+}
+

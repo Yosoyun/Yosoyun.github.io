@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "student-copy-grader"
+version = "0.1.0"
+description = "Local-first assistant for grading scanned student answer copies with rubrics."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "Student Copy Grader Contributors" }
+]
+dependencies = []
+
+[project.optional-dependencies]
+app = ["streamlit>=1.36"]
+ocr = ["pillow>=10", "pytesseract>=0.3.10", "pymupdf>=1.24"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+copygrader = "copygrader.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

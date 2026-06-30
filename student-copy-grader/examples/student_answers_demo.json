@@ -1,0 +1,12 @@
+{
+  "student": {
+    "id": "S001",
+    "name": "Demo Student"
+  },
+  "answers": {
+    "1": "Option C",
+    "2": "White light splits into seven colours when it passes through a prism.",
+    "3": "9.81 m/s^2"
+  }
+}
+

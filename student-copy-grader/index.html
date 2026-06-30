@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Student Copy Grader</title>
+  <meta name="description" content="Free browser-based rubric grading tool for teachers. Grade student answers, save records locally, and export reports.">
+  <style>
+    :root {
+      --ink: #17202a;
+      --muted: #5c6773;
+      --paper: #ffffff;
+      --wash: #f4f7f9;
+      --line: #d8e0e7;
+      --blue: #1f5f8b;
+      --green: #2d6a4f;
+      --red: #9b2c2c;
+      --amber: #a86f00;
+      --violet: #6554a8;
+      --shadow: 0 12px 32px rgba(23, 32, 42, .08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        linear-gradient(90deg, rgba(31, 95, 139, .05) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(45, 106, 79, .045) 1px, transparent 1px),
+        #f8fafb;
+      background-size: 36px 36px;
+      letter-spacing: 0;
+    }
+    a { color: var(--blue); }
+    button, input, textarea, select { font: inherit; letter-spacing: 0; }
+    .shell { min-height: 100vh; display: grid; grid-template-rows: auto 1fr; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px 22px;
+      background: rgba(255, 255, 255, .94);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 240px; }
+    .brandmark {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 900;
+    }
+    .brand strong { display: block; font-size: 17px; line-height: 1.2; }
+    .brand span { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .tabs { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
+    .tab {
+      min-height: 38px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      border-radius: 8px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .tab.active { color: var(--ink); background: #eaf2f7; border-color: #c7d9e7; }
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .btn {
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+      padding: 9px 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 1px 0 rgba(23, 32, 42, .03);
+    }
+    .btn.primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn.green { background: var(--green); border-color: var(--green); color: #fff; }
+    .btn.danger { color: var(--red); }
+    .btn.small { min-height: 34px; padding: 6px 9px; font-size: 13px; }
+    .workspace { padding: 22px; display: grid; gap: 16px; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .metric {
+      background: rgba(255, 255, 255, .9);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      min-height: 88px;
+    }
+    .metric span { color: var(--muted); font-size: 13px; font-weight: 800; }
+    .metric strong { display: block; margin-top: 6px; font-size: 30px; line-height: 1; }
+    .metric.blue strong { color: var(--blue); }
+    .metric.green strong { color: var(--green); }
+    .metric.amber strong { color: var(--amber); }
+    .metric.violet strong { color: var(--violet); }
+    .view { display: none; }
+    .view.active { display: grid; gap: 16px; }
+    .grader-layout {
+      display: grid;
+      grid-template-columns: minmax(300px, .95fr) minmax(320px, 1fr) minmax(320px, 1.05fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .panel {
+      background: rgba(255, 255, 255, .96);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #f9fbfc;
+    }
+    .panel-head h2 { margin: 0; font-size: 18px; line-height: 1.2; }
+    .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .panel-body { padding: 16px; display: grid; gap: 12px; }
+    label { display: grid; gap: 7px; color: var(--muted); font-size: 13px; font-weight: 800; }
+    textarea, input[type="text"], input[type="file"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+    }
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.45;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+    }
+    textarea.large { min-height: 300px; }
+    textarea.medium { min-height: 220px; }
+    .field-row { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 10px; }
+    .notice {
+      border: 1px solid #f1d7a8;
+      background: #fff8e8;
+      border-radius: 8px;
+      color: #6d4c10;
+      padding: 10px 12px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .result-hero {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      padding: 16px;
+      border: 1px solid #c9dfd4;
+      border-radius: 8px;
+      background: #f1fbf6;
+    }
+    .score { font-size: 42px; line-height: 1; color: var(--green); font-weight: 900; }
+    .student-name { color: var(--muted); margin-top: 4px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; background: #fff; }
+    th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #f4f7f9; color: #384553; font-size: 12px; text-transform: uppercase; }
+    tr:last-child td { border-bottom: 0; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .status.ok { background: #e8f5ee; color: #1f5b40; }
+    .status.review { background: #fff1dc; color: #804b00; }
+    .answer-text { white-space: pre-wrap; max-width: 340px; }
+    .feedback-list { margin: 0; padding-left: 17px; color: #344050; }
+    .record-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr); gap: 16px; align-items: start; }
+    .report-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .42fr); gap: 16px; align-items: start; }
+    .article {
+      padding: 20px;
+      background: rgba(255, 255, 255, .96);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .article h1, .article h2, .article h3 { margin: 0; line-height: 1.18; }
+    .article h1 { font-size: 32px; }
+    .article h2 { font-size: 22px; margin-top: 22px; }
+    .article h3 { font-size: 17px; margin-top: 16px; }
+    .article p, .article li { color: #3b4653; line-height: 1.58; }
+    .article ul { margin: 8px 0 0; padding-left: 20px; }
+    .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .mini { border: 1px solid var(--line); border-radius: 8px; background: #fbfcfd; padding: 12px; }
+    .mini strong { display: block; margin-bottom: 6px; }
+    .empty {
+      border: 1px dashed #c5d1dc;
+      border-radius: 8px;
+      padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      background: #fbfcfd;
+    }
+    .file-list { display: grid; gap: 8px; }
+    .file-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: #fbfcfd;
+      color: #344050;
+      font-size: 13px;
+    }
+    .file-item span:last-child { color: var(--muted); white-space: nowrap; }
+    .hidden-file { display: none; }
+    @media (max-width: 1180px) {
+      .grader-layout, .record-grid, .report-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 780px) {
+      .topbar { position: static; align-items: flex-start; flex-direction: column; }
+      .top-actions, .tabs { justify-content: flex-start; }
+      .workspace { padding: 14px; }
+      .metrics, .two-col, .field-row { grid-template-columns: 1fr; }
+      .score { font-size: 34px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .topbar, .panel-actions, .top-actions, .tabs, .btn, input[type="file"] { display: none !important; }
+      .workspace, .view.active, .grader-layout, .record-grid, .report-layout { display: block; padding: 0; }
+      .panel, .article, .metric { box-shadow: none; margin-bottom: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brandmark">SC</div>
+        <div>
+          <strong>Student Copy Grader</strong>
+          <span>CBSE-friendly local rubric checker</span>
+        </div>
+      </div>
+      <nav class="tabs" aria-label="Workspace tabs">
+        <button class="tab active" data-tab="grade">Grade Copies</button>
+        <button class="tab" data-tab="records">Class Records</button>
+        <button class="tab" data-tab="report">Project Report</button>
+      </nav>
+      <div class="top-actions">
+        <button class="btn" id="sampleBtn">Load Sample</button>
+        <button class="btn" id="saveBtn">Save</button>
+        <button class="btn primary" id="gradeBtn">Grade</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="metrics" aria-label="Class metrics">
+        <div class="metric blue"><span>Students Saved</span><strong id="metricStudents">0</strong></div>
+        <div class="metric green"><span>Current Score</span><strong id="metricScore">0/0</strong></div>
+        <div class="metric amber"><span>Review Items</span><strong id="metricReview">0</strong></div>
+        <div class="metric violet"><span>Class Average</span><strong id="metricAverage">0%</strong></div>
+      </section>
+
+      <section class="view active" id="view-grade">
+        <div class="grader-layout">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Question Paper</h2>
+              <div class="panel-actions"><button class="btn small" id="clearPaperBtn">Clear</button></div>
+            </div>
+            <div class="panel-body">
+              <label>Paper Text<textarea id="paperText" class="medium" placeholder="Paste question paper text here"></textarea></label>
+              <label>Attach Paper Or Key<input type="file" id="paperFiles" multiple accept=".pdf,image/*,.txt,.json"></label>
+              <div class="file-list" id="paperFileList"></div>
+              <div class="notice">Public website mode keeps records in this browser. No student file is uploaded to a server.</div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Solution Key</h2>
+              <div class="panel-actions">
+                <button class="btn small" id="rubricUploadBtn">Import</button>
+                <button class="btn small" id="validateRubricBtn">Validate</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <input class="hidden-file" type="file" id="rubricFile" accept=".json">
+              <label>Rubric JSON<textarea id="rubricText" class="large" spellcheck="false"></textarea></label>
+              <div class="notice" id="rubricStatus">Rubric waiting.</div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Student Copy</h2>
+              <div class="panel-actions">
+                <button class="btn small" id="answersUploadBtn">Import</button>
+                <button class="btn small green" id="saveStudentBtn">Save Student</button>
+              </div>
+            </div>
+            <div class="panel-body">
+              <input class="hidden-file" type="file" id="answersFile" accept=".json">
+              <div class="field-row">
+                <label>Student ID<input type="text" id="studentId" placeholder="S001"></label>
+                <label>Student Name<input type="text" id="studentName" placeholder="Student name"></label>
+              </div>
+              <label>Answers JSON<textarea id="answersText" class="medium" spellcheck="false"></textarea></label>
+              <label>Attach Scanned Copy<input type="file" id="scanFiles" multiple accept=".pdf,image/*"></label>
+              <div class="file-list" id="scanFileList"></div>
+            </div>
+          </section>
+        </div>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Marking Result</h2>
+            <div class="panel-actions">
+              <button class="btn small" id="downloadHtmlBtn">Download Report</button>
+              <button class="btn small" id="downloadJsonBtn">Download JSON</button>
+            </div>
+          </div>
+          <div class="panel-body" id="resultArea"><div class="empty">No result yet.</div></div>
+        </section>
+      </section>
+
+      <section class="view" id="view-records">
+        <div class="record-grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h2>Saved Students</h2>
+              <div class="panel-actions">
+                <button class="btn small" id="exportCsvBtn">Export CSV</button>
+                <button class="btn small" id="exportAllJsonBtn">Export JSON</button>
+                <button class="btn small danger" id="clearRecordsBtn">Clear Records</button>
+              </div>
+            </div>
+            <div class="panel-body" id="recordsArea"></div>
+          </section>
+
+          <section class="article">
+            <h2>Local Records</h2>
+            <p>Saved marks, feedback, and rubrics are stored in this browser's local storage. A public static website can be used by everyone, but each teacher's data remains private to their own device unless they export and share it.</p>
+            <div class="two-col">
+              <div class="mini"><strong>Export</strong><span>CSV for marksheets and JSON for backups.</span></div>
+              <div class="mini"><strong>Review</strong><span>Questions with uncertain marks are marked for teacher review.</span></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="view" id="view-report">
+        <div class="report-layout">
+          <article class="article">
+            <h1>Project Report</h1>
+            <p>Student Copy Grader is an open, free, local-first project for helping teachers check descriptive student answers against a question paper and marking scheme.</p>
+            <h2>Demand</h2>
+            <p>Teachers often check 40 or more handwritten copies per test. The pain is strongest when answers are descriptive, stepwise, or CBSE-style, because students and parents also need a clear reason for every deduction.</p>
+            <h2>Supply Gap</h2>
+            <p>Commercial AI grading products exist, but many are paid, cloud-based, or institution-priced. Open-source OCR and grading models exist separately. This project joins the useful pieces into a teacher-facing workflow.</p>
+            <h2>Current Website Scope</h2>
+            <ul>
+              <li>Question paper and marking scheme workspace.</li>
+              <li>Rubric JSON validation.</li>
+              <li>MCQ, numeric, and value-point short-answer grading.</li>
+              <li>Question-wise feedback and review flags.</li>
+              <li>Browser-local records and exports.</li>
+            </ul>
+            <h2>Handwriting OCR Roadmap</h2>
+            <p>The static website version does not claim perfect handwritten OCR. The next offline layer should connect OCR engines such as PaddleOCR, docTR, TrOCR, Tesseract, and math OCR tools such as pix2tex or Pix2Text. The teacher should verify OCR before final marks are locked.</p>
+            <h2>Evaluation Plan</h2>
+            <ul>
+              <li>Compare OCR text against human-corrected text.</li>
+              <li>Compare marks against teacher-approved marks.</li>
+              <li>Track exact agreement, within-one-mark agreement, and teacher override rate.</li>
+              <li>Measure minutes saved per copy.</li>
+            </ul>
+          </article>
+
+          <aside class="article">
+            <h2>Repository Files</h2>
+            <p><a href="./docs/research.md">Research notes</a></p>
+            <p><a href="./docs/architecture.md">Architecture</a></p>
+            <p><a href="./docs/rubric-format.md">Rubric format</a></p>
+            <p><a href="./docs/evaluation-plan.md">Evaluation plan</a></p>
+            <p><a href="./README.md">Project README</a></p>
+            <h2>Free Stack</h2>
+            <ul>
+              <li>Static website for public use.</li>
+              <li>Python local app for OCR experiments.</li>
+              <li>No paid API by default.</li>
+              <li>Teacher review before final marks.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "student-copy-grader-state-v1";
+    const sampleRubric = {
+      exam: { title: "CBSE Class X Science Demo", board: "CBSE", class_level: "X", subject: "Science", max_marks: 5 },
+      questions: [
+        { id: "1", marks: 1, type: "mcq", answer: "C" },
+        {
+          id: "2",
+          marks: 2,
+          type: "short_answer",
+          answer: "Dispersion occurs when white light splits into its constituent colours while passing through a prism due to different refraction of different wavelengths.",
+          rubric: [
+            { id: "splitting", marks: 1, description: "Explains that white light splits into colours", keywords: ["white light", "splits", "colours"], min_keywords: 2 },
+            { id: "cause", marks: 1, description: "Mentions prism, refraction, or wavelength as the cause", keywords: ["prism", "refraction", "wavelength"], min_keywords: 1 }
+          ]
+        },
+        { id: "3", marks: 2, type: "numeric", answer: "9.8", tolerance: 0.1 }
+      ]
+    };
+    const sampleAnswers = {
+      "1": "Option C",
+      "2": "White light splits into seven colours when it passes through a prism.",
+      "3": "9.81 m/s^2"
+    };
+    const defaultState = {
+      paperText: "Class X Science Demo\nQ1. Choose the correct option.\nQ2. What is dispersion of light?\nQ3. Write the value of acceleration due to gravity near Earth.",
+      rubricText: JSON.stringify(sampleRubric, null, 2),
+      studentId: "S001",
+      studentName: "Demo Student",
+      answersText: JSON.stringify(sampleAnswers, null, 2),
+      paperFiles: [],
+      scanFiles: [],
+      records: []
+    };
+    let state = loadState();
+    let currentResult = null;
+    const el = {
+      paperText: document.querySelector("#paperText"),
+      rubricText: document.querySelector("#rubricText"),
+      answersText: document.querySelector("#answersText"),
+      studentId: document.querySelector("#studentId"),
+      studentName: document.querySelector("#studentName"),
+      paperFiles: document.querySelector("#paperFiles"),
+      scanFiles: document.querySelector("#scanFiles"),
+      paperFileList: document.querySelector("#paperFileList"),
+      scanFileList: document.querySelector("#scanFileList"),
+      resultArea: document.querySelector("#resultArea"),
+      recordsArea: document.querySelector("#recordsArea"),
+      rubricStatus: document.querySelector("#rubricStatus"),
+      metricStudents: document.querySelector("#metricStudents"),
+      metricScore: document.querySelector("#metricScore"),
+      metricReview: document.querySelector("#metricReview"),
+      metricAverage: document.querySelector("#metricAverage"),
+      rubricFile: document.querySelector("#rubricFile"),
+      answersFile: document.querySelector("#answersFile")
+    };
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState };
+      } catch {
+        return { ...defaultState };
+      }
+    }
+    function saveState() {
+      syncStateFromFields();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderMetrics();
+      renderFileLists();
+      renderRecords();
+    }
+    function syncFieldsFromState() {
+      el.paperText.value = state.paperText || "";
+      el.rubricText.value = state.rubricText || "";
+      el.studentId.value = state.studentId || "";
+      el.studentName.value = state.studentName || "";
+      el.answersText.value = state.answersText || "";
+    }
+    function syncStateFromFields() {
+      state.paperText = el.paperText.value;
+      state.rubricText = el.rubricText.value;
+      state.studentId = el.studentId.value.trim();
+      state.studentName = el.studentName.value.trim();
+      state.answersText = el.answersText.value;
+    }
+    function parseRubric() {
+      const rubric = JSON.parse(el.rubricText.value);
+      if (!rubric || !Array.isArray(rubric.questions) || rubric.questions.length === 0) throw new Error("Rubric must contain a non-empty questions array.");
+      rubric.questions.forEach(question => {
+        if (!question.id) throw new Error("Every question needs an id.");
+        if (question.marks === undefined) throw new Error(`Question ${question.id} needs marks.`);
+      });
+      return rubric;
+    }
+    function parseAnswers() {
+      const parsed = JSON.parse(el.answersText.value || "{}");
+      if (parsed.answers && typeof parsed.answers === "object") return parsed.answers;
+      return parsed;
+    }
+    function validateRubric() {
+      try {
+        const rubric = parseRubric();
+        const total = rubric.questions.reduce((sum, question) => sum + Number(question.marks || 0), 0);
+        el.rubricStatus.textContent = `${rubric.questions.length} questions, ${formatNumber(total)} marks.`;
+      } catch (error) {
+        el.rubricStatus.textContent = error.message;
+      }
+    }
+    function gradeCurrentStudent() {
+      const rubric = parseRubric();
+      const answers = parseAnswers();
+      currentResult = gradeSubmission(rubric, { student: { id: el.studentId.value.trim() || "unknown", name: el.studentName.value.trim() }, answers });
+      renderResult(currentResult, rubric);
+      renderMetrics();
+      return { rubric, result: currentResult };
+    }
+    function gradeSubmission(rubric, submission) {
+      const questionResults = rubric.questions.map(question => gradeQuestion(question, submission.answers[String(question.id)] || ""));
+      const awarded = round2(questionResults.reduce((sum, item) => sum + item.awarded, 0));
+      const possible = round2(questionResults.reduce((sum, item) => sum + item.possible, 0));
+      return { student: submission.student, awarded, possible, questionResults };
+    }
+    function gradeQuestion(question, answer) {
+      const type = String(question.type || "short_answer").toLowerCase();
+      if (type === "mcq") return gradeMcq(question, answer);
+      if (type === "numeric") return gradeNumeric(question, answer);
+      return gradeShortAnswer(question, answer);
+    }
+    function gradeMcq(question, answer) {
+      const expected = String(question.answer || "");
+      const matched = normalizeOption(answer) === normalizeOption(expected);
+      const awarded = matched ? Number(question.marks || 0) : 0;
+      return {
+        questionId: String(question.id),
+        awarded,
+        possible: Number(question.marks || 0),
+        answer,
+        feedback: matched ? ["Correct option selected."] : [`Expected option ${expected}.`],
+        needsReview: !matched,
+        confidence: matched ? .98 : .65,
+        itemResults: [{ itemId: "mcq_exact", matched, awarded, possible: Number(question.marks || 0), description: "Selected the correct option", evidence: answer }]
+      };
+    }
+    function gradeNumeric(question, answer) {
+      const expected = firstNumber(String(question.answer || ""));
+      const actual = firstNumber(answer);
+      const tolerance = Number(question.tolerance || 0);
+      const matched = expected !== null && actual !== null && Math.abs(expected - actual) <= tolerance;
+      const evidence = actual === null ? "No numeric answer found." : `Found ${actual}, expected ${expected}, tolerance ${tolerance}.`;
+      const awarded = matched ? Number(question.marks || 0) : 0;
+      return {
+        questionId: String(question.id),
+        awarded,
+        possible: Number(question.marks || 0),
+        answer,
+        feedback: matched ? ["Numeric answer is within tolerance."] : [evidence],
+        needsReview: !matched,
+        confidence: matched ? .95 : .55,
+        itemResults: [{ itemId: "numeric_match", matched, awarded, possible: Number(question.marks || 0), description: "Numeric answer within tolerance", evidence }]
+      };
+    }
+    function gradeShortAnswer(question, answer) {
+      const possible = Number(question.marks || 0);
+      if (!String(answer).trim()) return { questionId: String(question.id), awarded: 0, possible, answer, feedback: ["No answer found."], needsReview: true, confidence: .2, itemResults: [] };
+      const items = Array.isArray(question.rubric) ? question.rubric : [];
+      if (items.length > 0) {
+        const itemResults = items.map(item => gradeRubricItem(item, answer, question.answer || ""));
+        const awarded = Math.min(possible, round2(itemResults.reduce((sum, item) => sum + item.awarded, 0)));
+        const feedback = itemResults.map(item => item.matched ? `+${formatNumber(item.awarded)}: ${item.description}.` : `0/${formatNumber(item.possible)}: Missing or unclear - ${item.description}.`);
+        const configured = itemResults.filter(item => item.evidence !== "no matching rule configured").length;
+        const coverage = configured / itemResults.length;
+        const confidence = round2(Math.max(.25, Math.min(.95, .35 + .35 * coverage + .25 * (possible ? awarded / possible : 0))));
+        return { questionId: String(question.id), awarded, possible, answer, feedback, needsReview: confidence < .82 || awarded < possible, confidence, itemResults };
+      }
+      const sim = similarity(answer, question.answer || "");
+      const matched = sim >= .72;
+      const awarded = matched ? possible : round2(possible * sim);
+      return {
+        questionId: String(question.id),
+        awarded,
+        possible,
+        answer,
+        feedback: [`Reference-answer similarity: ${sim.toFixed(2)}.`],
+        needsReview: !matched,
+        confidence: Math.max(.35, Math.min(.9, sim)),
+        itemResults: [{ itemId: "answer_similarity", matched, awarded, possible, description: "Similarity to reference answer", evidence: `similarity ${sim.toFixed(2)}` }]
+      };
+    }
+    function gradeRubricItem(item, answer, referenceAnswer) {
+      const accepted = Array.isArray(item.accepted) ? item.accepted : [];
+      const keywords = Array.isArray(item.keywords) ? item.keywords : [];
+      const minKeywords = Number(item.min_keywords || 1);
+      const acceptedMatch = accepted.some(value => normalizeText(answer).includes(normalizeText(value)));
+      const keywordCount = keywords.filter(value => normalizeText(answer).includes(normalizeText(value))).length;
+      const keywordMatch = keywords.length > 0 && keywordCount >= minKeywords;
+      const reference = item.reference || referenceAnswer || "";
+      const threshold = Number(item.similarity_threshold || 0);
+      const sim = threshold && reference ? similarity(answer, reference) : 0;
+      const similarityMatch = threshold > 0 && sim >= threshold;
+      const matched = acceptedMatch || keywordMatch || similarityMatch;
+      const evidence = [];
+      if (acceptedMatch) evidence.push("accepted phrase matched");
+      if (keywords.length) evidence.push(`${keywordCount}/${keywords.length} keywords matched`);
+      if (threshold) evidence.push(`similarity ${sim.toFixed(2)}`);
+      return {
+        itemId: item.id || "rubric_item",
+        description: item.description || item.id || "Rubric item",
+        awarded: matched ? Number(item.marks || 0) : 0,
+        possible: Number(item.marks || 0),
+        matched,
+        evidence: evidence.join(", ") || "no matching rule configured"
+      };
+    }
+    function normalizeText(value) {
+      return String(value || "").toLowerCase().match(/[a-z0-9]+/g)?.join(" ") || "";
+    }
+    function normalizeOption(value) {
+      const words = normalizeText(value).split(" ").filter(Boolean);
+      if (words[0] === "option" && words.length > 1) return words[1];
+      return words[0] || "";
+    }
+    function firstNumber(value) {
+      const match = String(value || "").match(/[-+]?(?:\d+\.\d+|\d+|\.\d+)/);
+      return match ? Number(match[0]) : null;
+    }
+    function similarity(left, right) {
+      const a = normalizeText(left).split(" ").filter(Boolean);
+      const b = normalizeText(right).split(" ").filter(Boolean);
+      if (!a.length || !b.length) return 0;
+      const setA = new Set(a);
+      const setB = new Set(b);
+      let overlap = 0;
+      setA.forEach(token => { if (setB.has(token)) overlap += 1; });
+      const dice = (2 * overlap) / (setA.size + setB.size);
+      const aText = a.join(" ");
+      const bText = b.join(" ");
+      const phrase = aText.includes(bText) || bText.includes(aText) ? .96 : 0;
+      return Math.max(dice, phrase);
+    }
+    function renderResult(result, rubric) {
+      const reviewCount = result.questionResults.filter(item => item.needsReview).length;
+      const rows = result.questionResults.map(item => `
+        <tr>
+          <td>Q${escapeHtml(item.questionId)}</td>
+          <td>${formatNumber(item.awarded)}/${formatNumber(item.possible)}</td>
+          <td><span class="status ${item.needsReview ? "review" : "ok"}">${item.needsReview ? "Review" : "OK"}</span><br><small>${Number(item.confidence).toFixed(2)}</small></td>
+          <td class="answer-text">${escapeHtml(item.answer)}</td>
+          <td><ul class="feedback-list">${item.feedback.map(line => `<li>${escapeHtml(line)}</li>`).join("")}</ul></td>
+        </tr>
+      `).join("");
+      el.resultArea.innerHTML = `
+        <div class="result-hero">
+          <div>
+            <div class="score">${formatNumber(result.awarded)}/${formatNumber(result.possible)}</div>
+            <div class="student-name">${escapeHtml(result.student.name || result.student.id)} · ${reviewCount} review item${reviewCount === 1 ? "" : "s"}</div>
+          </div>
+          <button class="btn green" id="saveResultInlineBtn">Save Student</button>
+        </div>
+        <table>
+          <thead><tr><th>Question</th><th>Marks</th><th>Status</th><th>Answer</th><th>Feedback</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+      document.querySelector("#saveResultInlineBtn").addEventListener("click", () => saveCurrentStudent(rubric, result));
+    }
+    function saveCurrentStudent(rubricArg, resultArg) {
+      const pack = resultArg ? { rubric: rubricArg, result: resultArg } : gradeCurrentStudent();
+      const rubric = pack.rubric;
+      const result = pack.result;
+      syncStateFromFields();
+      const record = {
+        id: result.student.id,
+        name: result.student.name,
+        savedAt: new Date().toISOString(),
+        questionPaper: state.paperText,
+        rubric,
+        answers: parseAnswers(),
+        result,
+        scanFiles: state.scanFiles || []
+      };
+      const key = record.id || `student-${Date.now()}`;
+      state.records = (state.records || []).filter(item => item.id !== key);
+      state.records.push({ ...record, id: key });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      renderRecords();
+      renderMetrics();
+    }
+    function renderRecords() {
+      const records = state.records || [];
+      if (!records.length) {
+        el.recordsArea.innerHTML = `<div class="empty">No saved students yet.</div>`;
+        return;
+      }
+      const rows = records.map((record, index) => {
+        const percent = record.result.possible ? Math.round((record.result.awarded / record.result.possible) * 100) : 0;
+        const review = record.result.questionResults.filter(item => item.needsReview).length;
+        return `
+          <tr>
+            <td>${escapeHtml(record.id)}</td>
+            <td>${escapeHtml(record.name || "")}</td>
+            <td>${formatNumber(record.result.awarded)}/${formatNumber(record.result.possible)}</td>
+            <td>${percent}%</td>
+            <td>${review}</td>
+            <td>
+              <button class="btn small" data-load-record="${index}">Load</button>
+              <button class="btn small" data-report-record="${index}">Report</button>
+              <button class="btn small danger" data-delete-record="${index}">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+      el.recordsArea.innerHTML = `<table><thead><tr><th>ID</th><th>Name</th><th>Marks</th><th>Percent</th><th>Review</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    function renderMetrics() {
+      const records = state.records || [];
+      const average = records.length ? Math.round(records.reduce((sum, record) => sum + (record.result.possible ? record.result.awarded / record.result.possible : 0), 0) / records.length * 100) : 0;
+      const reviewCount = currentResult ? currentResult.questionResults.filter(item => item.needsReview).length : 0;
+      el.metricStudents.textContent = String(records.length);
+      el.metricScore.textContent = currentResult ? `${formatNumber(currentResult.awarded)}/${formatNumber(currentResult.possible)}` : "0/0";
+      el.metricReview.textContent = String(reviewCount);
+      el.metricAverage.textContent = `${average}%`;
+    }
+    function renderFileLists() {
+      el.paperFileList.innerHTML = renderFileItems(state.paperFiles || []);
+      el.scanFileList.innerHTML = renderFileItems(state.scanFiles || []);
+    }
+    function renderFileItems(files) {
+      if (!files.length) return "";
+      return files.map(file => `<div class="file-item"><span>${escapeHtml(file.name)}</span><span>${escapeHtml(file.size)}</span></div>`).join("");
+    }
+    function captureFileList(input, targetKey) {
+      const files = Array.from(input.files || []).map(file => ({ name: file.name, size: formatBytes(file.size), type: file.type || "file" }));
+      state[targetKey] = files;
+      saveState();
+    }
+    function loadRecord(index) {
+      const record = state.records[index];
+      if (!record) return;
+      state.paperText = record.questionPaper || "";
+      state.rubricText = JSON.stringify(record.rubric, null, 2);
+      state.studentId = record.id || "";
+      state.studentName = record.name || "";
+      state.answersText = JSON.stringify(record.answers || {}, null, 2);
+      state.scanFiles = record.scanFiles || [];
+      syncFieldsFromState();
+      currentResult = record.result;
+      renderResult(currentResult, record.rubric);
+      renderMetrics();
+      setActiveTab("grade");
+    }
+    function deleteRecord(index) {
+      state.records.splice(index, 1);
+      saveState();
+    }
+    function exportCsv() {
+      const records = state.records || [];
+      const lines = [["Student ID", "Student Name", "Awarded", "Possible", "Percent", "Review Items"].join(",")];
+      records.forEach(record => {
+        const review = record.result.questionResults.filter(item => item.needsReview).length;
+        const percent = record.result.possible ? Math.round((record.result.awarded / record.result.possible) * 100) : 0;
+        lines.push([record.id, record.name || "", record.result.awarded, record.result.possible, percent, review].map(csvCell).join(","));
+      });
+      downloadText("student-copy-grader-marks.csv", lines.join("\n"), "text/csv");
+    }
+    function exportAllJson() {
+      syncStateFromFields();
+      downloadText("student-copy-grader-records.json", JSON.stringify(state, null, 2), "application/json");
+    }
+    function downloadCurrentJson() {
+      if (!currentResult) gradeCurrentStudent();
+      downloadText("student-grading-result.json", JSON.stringify(currentResult, null, 2), "application/json");
+    }
+    function downloadCurrentHtml(recordIndex = null) {
+      let result = currentResult;
+      let rubric;
+      if (recordIndex !== null) {
+        const record = state.records[recordIndex];
+        if (!record) return;
+        result = record.result;
+        rubric = record.rubric;
+      } else {
+        const pack = gradeCurrentStudent();
+        result = pack.result;
+        rubric = pack.rubric;
+      }
+      const html = renderReportHtml(rubric, result);
+      downloadText(`report-${safeFileName(result.student.id || "student")}.html`, html, "text/html");
+    }
+    function renderReportHtml(rubric, result) {
+      const rows = result.questionResults.map(item => `
+        <tr>
+          <td>Q${escapeHtml(item.questionId)}</td>
+          <td>${formatNumber(item.awarded)}/${formatNumber(item.possible)}</td>
+          <td>${item.needsReview ? "Review" : "OK"}</td>
+          <td>${escapeHtml(item.answer)}</td>
+          <td>${item.feedback.map(escapeHtml).join("<br>")}</td>
+        </tr>`).join("");
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${escapeHtml(rubric.exam?.title || "Grading Report")}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #17202a; margin: 28px; }
+    h1 { margin-bottom: 4px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #d8e0e7; padding: 9px; text-align: left; vertical-align: top; }
+    th { background: #f4f7f9; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(rubric.exam?.title || "Grading Report")}</h1>
+  <div>Student: ${escapeHtml(result.student.name || result.student.id)} (${escapeHtml(result.student.id)})</div>
+  <h2>Total: ${formatNumber(result.awarded)}/${formatNumber(result.possible)}</h2>
+  <table>
+    <thead><tr><th>Question</th><th>Marks</th><th>Status</th><th>Answer</th><th>Feedback</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`;
+    }
+    function setActiveTab(name) {
+      document.querySelectorAll(".tab").forEach(tab => tab.classList.toggle("active", tab.dataset.tab === name));
+      document.querySelectorAll(".view").forEach(view => view.classList.toggle("active", view.id === `view-${name}`));
+    }
+    function loadSample() {
+      state = { ...defaultState, records: state.records || [] };
+      currentResult = null;
+      syncFieldsFromState();
+      validateRubric();
+      const pack = gradeCurrentStudent();
+      renderResult(pack.result, pack.rubric);
+      saveState();
+    }
+    function readJsonFile(input, callback) {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          callback(JSON.parse(String(reader.result || "{}")));
+        } catch (error) {
+          alert(error.message);
+        }
+      };
+      reader.readAsText(file);
+    }
+    function downloadText(filename, text, mime) {
+      const blob = new Blob([text], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+    function csvCell(value) {
+      const text = String(value ?? "");
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
+    }
+    function formatNumber(value) {
+      const number = Number(value || 0);
+      return Number.isInteger(number) ? String(number) : number.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+    }
+    function round2(value) {
+      return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+    }
+    function formatBytes(bytes) {
+      if (!bytes) return "0 B";
+      const units = ["B", "KB", "MB", "GB"];
+      const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+      return `${(bytes / Math.pow(1024, index)).toFixed(index ? 1 : 0)} ${units[index]}`;
+    }
+    function safeFileName(value) {
+      return String(value || "student").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "student";
+    }
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => setActiveTab(tab.dataset.tab));
+    });
+    document.querySelector("#sampleBtn").addEventListener("click", loadSample);
+    document.querySelector("#saveBtn").addEventListener("click", saveState);
+    document.querySelector("#gradeBtn").addEventListener("click", () => {
+      try {
+        const pack = gradeCurrentStudent();
+        saveState();
+        renderResult(pack.result, pack.rubric);
+      } catch (error) {
+        el.resultArea.innerHTML = `<div class="notice">${escapeHtml(error.message)}</div>`;
+      }
+    });
+    document.querySelector("#saveStudentBtn").addEventListener("click", () => saveCurrentStudent());
+    document.querySelector("#validateRubricBtn").addEventListener("click", validateRubric);
+    document.querySelector("#clearPaperBtn").addEventListener("click", () => { el.paperText.value = ""; saveState(); });
+    document.querySelector("#rubricUploadBtn").addEventListener("click", () => el.rubricFile.click());
+    document.querySelector("#answersUploadBtn").addEventListener("click", () => el.answersFile.click());
+    document.querySelector("#downloadHtmlBtn").addEventListener("click", () => downloadCurrentHtml());
+    document.querySelector("#downloadJsonBtn").addEventListener("click", downloadCurrentJson);
+    document.querySelector("#exportCsvBtn").addEventListener("click", exportCsv);
+    document.querySelector("#exportAllJsonBtn").addEventListener("click", exportAllJson);
+    document.querySelector("#clearRecordsBtn").addEventListener("click", () => {
+      if (confirm("Clear all saved student records from this browser?")) {
+        state.records = [];
+        saveState();
+      }
+    });
+    el.paperFiles.addEventListener("change", () => captureFileList(el.paperFiles, "paperFiles"));
+    el.scanFiles.addEventListener("change", () => captureFileList(el.scanFiles, "scanFiles"));
+    el.rubricFile.addEventListener("change", () => readJsonFile(el.rubricFile, data => {
+      el.rubricText.value = JSON.stringify(data, null, 2);
+      validateRubric();
+      saveState();
+    }));
+    el.answersFile.addEventListener("change", () => readJsonFile(el.answersFile, data => {
+      if (data.student) {
+        el.studentId.value = data.student.id || el.studentId.value;
+        el.studentName.value = data.student.name || el.studentName.value;
+      }
+      el.answersText.value = JSON.stringify(data.answers || data, null, 2);
+      saveState();
+    }));
+    el.recordsArea.addEventListener("click", event => {
+      const loadButton = event.target.closest("[data-load-record]");
+      const deleteButton = event.target.closest("[data-delete-record]");
+      const reportButton = event.target.closest("[data-report-record]");
+      if (loadButton) loadRecord(Number(loadButton.dataset.loadRecord));
+      if (deleteButton) deleteRecord(Number(deleteButton.dataset.deleteRecord));
+      if (reportButton) downloadCurrentHtml(Number(reportButton.dataset.reportRecord));
+    });
+    ["input", "change"].forEach(eventName => {
+      [el.paperText, el.rubricText, el.answersText, el.studentId, el.studentName].forEach(input => {
+        input.addEventListener(eventName, () => syncStateFromFields());
+      });
+    });
+    syncFieldsFromState();
+    validateRubric();
+    renderFileLists();
+    renderRecords();
+    renderMetrics();
+  </script>
+</body>
+</html>
