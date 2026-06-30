@@ -76,6 +76,12 @@ After pushing the repo to GitHub, add these repository secrets:
 
 The workflow runs at 08:00, 14:00, and 20:00 Asia/Kolkata, and can also be run manually from the GitHub Actions tab.
 
+The public mobile link page is:
+
+```text
+https://yosoyun.github.io/ai-digest-bot.html?bot=YOUR_BOT_USERNAME
+```
+
 ## Notes
 
 - The first version uses RSS/API-friendly public feeds.

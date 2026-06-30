@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI Intelligence Digest Bot</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f7f8fb;
+      color: #111827;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top left, rgba(34, 158, 217, 0.14), transparent 34rem),
+        linear-gradient(180deg, #ffffff 0%, #f3f5f8 100%);
+    }
+
+    main {
+      width: min(92vw, 520px);
+      padding: 42px 22px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 7vw, 48px);
+      line-height: 1.02;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0 auto 20px;
+      max-width: 36rem;
+      color: #4b5563;
+      font-size: 17px;
+      line-height: 1.55;
+    }
+
+    .qr {
+      display: none;
+      width: min(74vw, 320px);
+      height: auto;
+      margin: 24px auto 16px;
+      padding: 14px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 0 22px;
+      border-radius: 8px;
+      background: #229ed9;
+      color: #ffffff;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .muted {
+      margin-top: 18px;
+      font-size: 14px;
+      color: #6b7280;
+      overflow-wrap: anywhere;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        background: #0f172a;
+        color: #f8fafc;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at top left, rgba(34, 158, 217, 0.24), transparent 34rem),
+          linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      }
+
+      p,
+      .muted {
+        color: #cbd5e1;
+      }
+
+      .qr {
+        border-color: #334155;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>AI Intelligence Digest</h1>
+    <p id="intro">Open the Telegram bot, tap Start, and the AI digest will arrive on your phone.</p>
+    <img id="qr" class="qr" alt="Telegram bot QR code">
+    <p><a id="bot-link" class="button" href="https://t.me/BotFather">Open Telegram</a></p>
+    <p id="status" class="muted">Bot username is not configured yet. Add <code>?bot=your_bot_username</code> to this URL after creating the bot.</p>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const bot = (params.get("bot") || "").replace(/^@/, "").trim();
+    const botLink = document.getElementById("bot-link");
+    const status = document.getElementById("status");
+    const qr = document.getElementById("qr");
+
+    if (/^[A-Za-z0-9_]{5,32}$/.test(bot)) {
+      const telegramUrl = `https://t.me/${bot}`;
+      botLink.href = telegramUrl;
+      botLink.textContent = "Open Bot In Telegram";
+      status.textContent = telegramUrl;
+      qr.src = "https://api.qrserver.com/v1/create-qr-code/?" + new URLSearchParams({
+        size: "360x360",
+        margin: "18",
+        data: telegramUrl
+      });
+      qr.style.display = "block";
+    }
+  </script>
+</body>
+</html>
