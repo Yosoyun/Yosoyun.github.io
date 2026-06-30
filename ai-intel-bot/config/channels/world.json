@@ -1,0 +1,141 @@
+{
+  "digest": {
+    "title": "World Affairs Brief",
+    "empty": "No fresh global affairs item cleared the signal threshold. The filter is intentionally strict.",
+    "noise": "RSS/API-friendly global news sources only. Prioritizes geopolitics, policy, conflict, trade, and macro consequences.",
+    "per_source": 2,
+    "high_confidence_sources": [
+      "BBC World",
+      "NYTimes World",
+      "WSJ World",
+      "Al Jazeera"
+    ],
+    "sections": [
+      {
+        "label": "Geopolitics",
+        "categories": ["world", "geopolitics"]
+      },
+      {
+        "label": "Policy / Trade",
+        "categories": ["policy", "macro"]
+      },
+      {
+        "label": "Conflict / Risk",
+        "categories": ["risk", "security"]
+      }
+    ]
+  },
+  "feeds": [
+    {
+      "name": "BBC World",
+      "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+      "category": "world",
+      "weight": 5
+    },
+    {
+      "name": "NYTimes World",
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+      "category": "world",
+      "weight": 4
+    },
+    {
+      "name": "WSJ World",
+      "url": "https://feeds.a.dj.com/rss/RSSWorldNews.xml",
+      "category": "world",
+      "weight": 4
+    },
+    {
+      "name": "Al Jazeera",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "category": "geopolitics",
+      "weight": 4
+    },
+    {
+      "name": "The Guardian World",
+      "url": "https://www.theguardian.com/world/rss",
+      "category": "world",
+      "weight": 3
+    },
+    {
+      "name": "France 24",
+      "url": "https://www.france24.com/en/rss",
+      "category": "world",
+      "weight": 3
+    },
+    {
+      "name": "NPR World",
+      "url": "https://feeds.npr.org/1004/rss.xml",
+      "category": "world",
+      "weight": 3
+    }
+  ],
+  "keyword_weights": {
+    "must_know": 2.4,
+    "strategy": 2.0,
+    "risk": 1.9,
+    "macro": 1.7,
+    "negative": -4.0
+  },
+  "keywords": {
+    "must_know": [
+      "war",
+      "ceasefire",
+      "invasion",
+      "election",
+      "sanctions",
+      "tariff",
+      "summit",
+      "treaty",
+      "coup",
+      "missile",
+      "nuclear",
+      "trade deal",
+      "emergency"
+    ],
+    "strategy": [
+      "china",
+      "united states",
+      "india",
+      "russia",
+      "europe",
+      "middle east",
+      "taiwan",
+      "south china sea",
+      "ukraine",
+      "israel",
+      "iran",
+      "nato",
+      "brics",
+      "g7"
+    ],
+    "risk": [
+      "attack",
+      "conflict",
+      "hostage",
+      "sanctions",
+      "export controls",
+      "supply chain",
+      "refugee",
+      "cyberattack",
+      "military"
+    ],
+    "macro": [
+      "inflation",
+      "energy",
+      "oil",
+      "food",
+      "shipping",
+      "trade",
+      "currency",
+      "debt",
+      "central bank"
+    ],
+    "negative": [
+      "travel guide",
+      "lifestyle",
+      "celebrity",
+      "sports",
+      "opinion quiz"
+    ]
+  }
+}

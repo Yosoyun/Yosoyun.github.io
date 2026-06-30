@@ -25,6 +25,7 @@ from zoneinfo import ZoneInfo
 
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG = BASE_DIR / "config" / "sources.json"
+CHANNEL_CONFIG_DIR = BASE_DIR / "config" / "channels"
 DEFAULT_ENV = BASE_DIR / ".env"
 DEFAULT_STATE = BASE_DIR / "state" / "seen.json"
 IST = ZoneInfo("Asia/Kolkata")
@@ -189,6 +190,35 @@ def keyword_hits(text: str, keywords: dict[str, list[str]]) -> dict[str, list[st
     return hits
 
 
+def digest_meta(config: dict[str, object]) -> dict[str, object]:
+    raw = config.get("digest", {})
+    if not isinstance(raw, dict):
+        raw = {}
+    return raw
+
+
+def keyword_weights(config: dict[str, object]) -> dict[str, float]:
+    raw = config.get("keyword_weights", {})
+    weights = {
+        "must_know": 2.2,
+        "research": 1.6,
+        "business": 1.9,
+        "markets": 1.9,
+        "macro": 1.7,
+        "risk": 1.7,
+        "technical": 1.5,
+        "strategy": 1.6,
+        "negative": -3.5,
+    }
+    if isinstance(raw, dict):
+        for key, value in raw.items():
+            try:
+                weights[str(key)] = float(value)
+            except (TypeError, ValueError):
+                continue
+    return weights
+
+
 def score_entry(
     title: str,
     summary: str,
@@ -196,18 +226,28 @@ def score_entry(
     source_category: str,
     published: datetime | None,
     keywords: dict[str, list[str]],
+    weights: dict[str, float],
 ) -> tuple[float, tuple[str, ...]]:
     text = f"{title} {summary}"
     hits = keyword_hits(text, keywords)
     score = source_weight
-    score += 2.2 * len(hits.get("must_know", []))
-    score += 1.6 * len(hits.get("research", []))
-    score += 1.9 * len(hits.get("business", []))
-    score -= 3.5 * len(hits.get("negative", []))
+    for group, matches in hits.items():
+        if not matches:
+            continue
+        score += weights.get(group, 1.3) * len(matches)
 
-    if source_category in {"frontier", "research"}:
+    if source_category in {"frontier", "research", "math", "quantum"}:
         score += 1.5
-    elif source_category in {"business", "infrastructure"}:
+    elif source_category in {
+        "business",
+        "infrastructure",
+        "markets",
+        "equities",
+        "macro",
+        "geopolitics",
+        "policy",
+        "mega-cap",
+    }:
         score += 1.0
 
     if published:
@@ -221,15 +261,20 @@ def score_entry(
         elif age_hours > 336:
             score -= 1.5
 
-    matched_terms = tuple(
-        term
-        for group in ("must_know", "research", "business")
-        for term in hits.get(group, [])[:4]
-    )
-    return score, matched_terms
+    matched_terms = []
+    for group, matches in hits.items():
+        if weights.get(group, 1.3) <= 0:
+            continue
+        matched_terms.extend(matches[:4])
+    return score, tuple(matched_terms)
 
 
-def parse_feed(feed: dict[str, object], keywords: dict[str, list[str]], timeout: int) -> list[Entry]:
+def parse_feed(
+    feed: dict[str, object],
+    keywords: dict[str, list[str]],
+    weights: dict[str, float],
+    timeout: int,
+) -> list[Entry]:
     content = fetch_url(str(feed["url"]), timeout)
     root = ET.fromstring(content)
     category = str(feed.get("category", "general"))
@@ -250,7 +295,7 @@ def parse_feed(feed: dict[str, object], keywords: dict[str, list[str]], timeout:
         )
         if not title:
             continue
-        score, matched = score_entry(title, summary, weight, category, published, keywords)
+        score, matched = score_entry(title, summary, weight, category, published, keywords, weights)
         entries.append(
             Entry(
                 title=title,
@@ -268,23 +313,32 @@ def parse_feed(feed: dict[str, object], keywords: dict[str, list[str]], timeout:
 
 def reason_for(entry: Entry) -> str:
     text = f"{entry.title} {entry.summary}".lower()
-    if entry.category in {"research", "technical"}:
-        return "technical signal for models, agents, or AI capability."
-    if entry.category in {"business", "infrastructure"} or any(
-        term in text for term in ("billion", "funding", "gpu", "cloud", "regulation", "valuation")
+    if entry.category in {"markets", "equities", "rates", "commodities", "earnings"}:
+        return "market signal for capital flows, risk appetite, rates, or earnings."
+    if entry.category in {"world", "geopolitics", "policy", "macro"}:
+        return "global risk signal for policy, conflict, trade, or macro direction."
+    if entry.category in {"math", "qfinance", "research", "technical"}:
+        return "research signal for models, mathematics, quantitative methods, or technical capability."
+    if entry.category in {"quantum", "deeptech", "science"}:
+        return "deep-tech signal for quantum capability, hardware, physics, or frontier science."
+    if entry.category in {"mega-cap", "infrastructure", "trillion", "business"} or any(
+        term in text for term in ("billion", "trillion", "funding", "gpu", "cloud", "regulation", "valuation")
     ):
-        return "business signal for capital, infra, regulation, or market structure."
+        return "strategic capital signal for trillion-dollar markets, infrastructure, or market structure."
     if any(
         term in text for term in ("benchmark", "reasoning", "inference", "training", "agent", "llm")
     ):
         return "technical signal for models, agents, or AI capability."
     if entry.category == "frontier":
         return "frontier-lab signal worth tracking before it becomes mainstream."
-    return "high-signal AI item based on source quality, recency, and keyword match."
+    return "high-signal item based on source quality, recency, and keyword match."
 
 
-def confidence_for(entry: Entry) -> str:
-    if entry.source in {"OpenAI News", "Anthropic News", "Google DeepMind", "Google AI Blog", "arXiv cs.AI", "arXiv cs.CL"}:
+def confidence_for(entry: Entry, config: dict[str, object]) -> str:
+    high_sources = digest_meta(config).get("high_confidence_sources", [])
+    if isinstance(high_sources, list) and entry.source in {str(source) for source in high_sources}:
+        return "high"
+    if entry.score >= 13:
         return "high"
     if entry.score >= 10:
         return "medium-high"
@@ -351,34 +405,39 @@ def bullet(entry: Entry) -> str:
     return f"• {link_for(entry)} <i>({html.escape(entry.source)})</i>"
 
 
-def numbered(entry: Entry, index: int) -> str:
+def numbered(entry: Entry, index: int, config: dict[str, object]) -> str:
     matched = f" Signals: {html.escape(', '.join(entry.matched[:3]))}." if entry.matched else ""
     return (
         f"{index}. {link_for(entry)}\n"
-        f"   Why: {html.escape(reason_for(entry))} Confidence: {confidence_for(entry)}.{matched}"
+        f"   Why: {html.escape(reason_for(entry))} Confidence: {confidence_for(entry, config)}.{matched}"
     )
 
 
-def build_digest(entries: list[Entry], skipped_count: int, max_items: int) -> str:
+def build_digest(entries: list[Entry], skipped_count: int, max_items: int, config: dict[str, object]) -> str:
     now = datetime.now(IST).strftime("%d %b %Y, %I:%M %p IST")
+    meta = digest_meta(config)
+    title = str(meta.get("title", "AI Intelligence Digest"))
+    empty = str(
+        meta.get(
+            "empty",
+            "No fresh high-signal items were found in the configured feeds. That is useful too: the right move is not to force-feed noise.",
+        )
+    )
     ranked = unique_entries(entries)[:50]
     if not ranked:
         return (
-            f"<b>AI Intelligence Digest</b>\n"
+            f"<b>{html.escape(title)}</b>\n"
             f"<code>{html.escape(now)}</code>\n\n"
-            "No fresh high-signal items were found in the configured feeds. "
-            "That is useful too: the right move is not to force-feed noise."
+            f"{html.escape(empty)}"
         )
 
     used: set[str] = set()
-    must = source_capped_entries(ranked, min(6, max_items), per_source=2)
+    per_source = int(meta.get("per_source", 2))
+    must = source_capped_entries(ranked, min(6, max_items), per_source=per_source)
     used.update(fingerprint(entry.title, entry.link) for entry in must)
-    research = section_entries(ranked, {"research", "technical", "frontier"}, 3, used)
-    business = section_entries(ranked, {"business", "infrastructure"}, 3, used)
-    watchlist = [entry for entry in ranked if fingerprint(entry.title, entry.link) not in used][:3]
 
     lines = [
-        "<b>AI Intelligence Digest</b>",
+        f"<b>{html.escape(title)}</b>",
         f"<code>{html.escape(now)}</code>",
         "",
         "<b>Executive Brief</b>",
@@ -388,28 +447,44 @@ def build_digest(entries: list[Entry], skipped_count: int, max_items: int) -> st
 
     lines.extend(["", "<b>Must-Know</b>"])
     for index, entry in enumerate(must, start=1):
-        lines.append(numbered(entry, index))
+        lines.append(numbered(entry, index, config))
 
-    if research:
-        lines.extend(["", "<b>Research / Technical</b>"])
-        for entry in research:
-            lines.append(bullet(entry))
+    raw_sections = meta.get("sections", [])
+    if not isinstance(raw_sections, list) or not raw_sections:
+        raw_sections = [
+            {"label": "Research / Technical", "categories": ["research", "technical", "frontier"]},
+            {"label": "Business / Macro", "categories": ["business", "infrastructure"]},
+        ]
+    for raw_section in raw_sections:
+        if not isinstance(raw_section, dict):
+            continue
+        label = str(raw_section.get("label", "Signals"))
+        categories = raw_section.get("categories", [])
+        if not isinstance(categories, list):
+            continue
+        selected = section_entries(ranked, {str(category) for category in categories}, 3, used)
+        if selected:
+            lines.extend(["", f"<b>{html.escape(label)}</b>"])
+            for entry in selected:
+                lines.append(bullet(entry))
 
-    if business:
-        lines.extend(["", "<b>Business / Macro</b>"])
-        for entry in business:
-            lines.append(bullet(entry))
-
+    watchlist = [entry for entry in ranked if fingerprint(entry.title, entry.link) not in used][:3]
     if watchlist:
         lines.extend(["", "<b>Watchlist</b>"])
         for entry in watchlist:
             lines.append(bullet(entry))
 
+    noise = str(
+        meta.get(
+            "noise",
+            "RSS/API-friendly sources only. Skipped duplicates, low-signal items, and older feed entries.",
+        )
+    )
     lines.extend(
         [
             "",
             "<b>Noise Filter</b>",
-            f"Skipped {skipped_count} duplicate, low-signal, or older feed items. Reddit/X are intentionally not scraped here; add official API credentials before enabling those channels.",
+            f"Skipped {skipped_count} duplicate, low-signal, or older feed items. {html.escape(noise)}",
         ]
     )
     return "\n".join(lines)
@@ -503,13 +578,14 @@ def collect_entries(config: dict[str, object], timeout: int) -> tuple[list[Entry
         for key, value in keywords.items()
         if isinstance(value, list)
     }
+    weights = keyword_weights(config)
     entries: list[Entry] = []
     failures: list[str] = []
     for feed in config.get("feeds", []):
         if not isinstance(feed, dict):
             continue
         try:
-            entries.extend(parse_feed(feed, normalized_keywords, timeout))
+            entries.extend(parse_feed(feed, normalized_keywords, weights, timeout))
         except Exception as exc:
             failures.append(f"{feed.get('name', feed.get('url', 'unknown'))}: {exc}")
     return entries, failures
@@ -522,11 +598,19 @@ def is_fresh(entry: Entry, hours: float) -> bool:
     return age_hours <= hours
 
 
+def channel_config_path(channel: str) -> Path:
+    safe_channel = re.sub(r"[^a-zA-Z0-9_-]+", "", channel.strip())
+    if not safe_channel:
+        return DEFAULT_CONFIG
+    return CHANNEL_CONFIG_DIR / f"{safe_channel}.json"
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Send a curated AI digest to Telegram.")
-    parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser = argparse.ArgumentParser(description="Send a curated intelligence digest to Telegram.")
+    parser.add_argument("--channel", help="Named channel config from ai-intel-bot/config/channels.")
+    parser.add_argument("--config", type=Path)
     parser.add_argument("--env-file", type=Path, default=DEFAULT_ENV)
-    parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
+    parser.add_argument("--state", type=Path)
     parser.add_argument("--max-items", type=int, default=8)
     parser.add_argument("--timeout", type=int, default=20)
     parser.add_argument("--dry-run", action="store_true")
@@ -540,13 +624,21 @@ def main() -> int:
     parser.add_argument("--test", action="store_true", help="Send a short Telegram connectivity test.")
     args = parser.parse_args()
 
+    channel = (args.channel or "").strip()
+    config_path = args.config or channel_config_path(channel)
+    state_path = args.state or (
+        BASE_DIR / "state" / f"{re.sub(r'[^a-zA-Z0-9_-]+', '', channel)}-seen.json"
+        if channel
+        else DEFAULT_STATE
+    )
+
     load_env_file(args.env_file)
     dry_run = args.dry_run or os.environ.get("AI_DIGEST_DRY_RUN") == "1"
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()
     chat_id = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
 
     if args.test:
-        message = "<b>AI Intelligence Digest</b>\nTelegram bot connection works."
+        message = "<b>Telegram Intelligence Network</b>\nTelegram bot connection works."
         if dry_run:
             print(message)
             return 0
@@ -557,13 +649,13 @@ def main() -> int:
         print("Telegram test message sent.")
         return 0
 
-    config = load_json(args.config, {"feeds": [], "keywords": {}})
+    config = load_json(config_path, {"feeds": [], "keywords": {}})
     if not isinstance(config, dict):
-        print(f"Invalid config: {args.config}", file=sys.stderr)
+        print(f"Invalid config: {config_path}", file=sys.stderr)
         return 2
 
     all_entries, failures = collect_entries(config, args.timeout)
-    seen = load_json(args.state, {})
+    seen = load_json(state_path, {})
     if not isinstance(seen, dict):
         seen = {}
     current_seen = set(seen.keys())
@@ -583,7 +675,7 @@ def main() -> int:
             continue
         fresh_entries.append(entry)
 
-    digest = build_digest(fresh_entries, skipped, args.max_items)
+    digest = build_digest(fresh_entries, skipped, args.max_items, config)
     if failures:
         failure_note = "\n".join(f"• {html.escape(item)}" for item in failures[:5])
         digest += f"\n\n<b>Source Notes</b>\n{failure_note}"
@@ -604,7 +696,7 @@ def main() -> int:
                 "source": entry.source,
                 "sent_at": now,
             }
-        save_json(args.state, seen)
+        save_json(state_path, seen)
     return 0
 
 

@@ -1,0 +1,160 @@
+{
+  "digest": {
+    "title": "Trillion-Dollar Signals",
+    "empty": "No trillion-dollar scale signal cleared the filter. This stream only fires for big structural moves.",
+    "noise": "RSS/API-friendly sources only. Focuses on mega-cap strategy, AI infrastructure, energy, chips, telecom, defense, space, and capital formation.",
+    "per_source": 2,
+    "high_confidence_sources": [
+      "WSJ Business",
+      "CNBC Technology",
+      "NVIDIA AI Blog",
+      "Stratechery"
+    ],
+    "sections": [
+      {
+        "label": "Mega-Cap Strategy",
+        "categories": ["mega-cap", "business"]
+      },
+      {
+        "label": "Infrastructure / Energy",
+        "categories": ["infrastructure", "energy"]
+      },
+      {
+        "label": "Chips / Telecom / Defense",
+        "categories": ["deeptech", "policy"]
+      }
+    ]
+  },
+  "feeds": [
+    {
+      "name": "WSJ Business",
+      "url": "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml",
+      "category": "business",
+      "weight": 5
+    },
+    {
+      "name": "CNBC Technology",
+      "url": "https://www.cnbc.com/id/19854910/device/rss/rss.html",
+      "category": "mega-cap",
+      "weight": 4
+    },
+    {
+      "name": "NVIDIA AI Blog",
+      "url": "https://blogs.nvidia.com/blog/category/deep-learning/feed/",
+      "category": "deeptech",
+      "weight": 4
+    },
+    {
+      "name": "Data Center Dynamics",
+      "url": "https://www.datacenterdynamics.com/en/rss/",
+      "category": "infrastructure",
+      "weight": 4
+    },
+    {
+      "name": "TechCrunch",
+      "url": "https://techcrunch.com/feed/",
+      "category": "business",
+      "weight": 3
+    },
+    {
+      "name": "Stratechery",
+      "url": "https://stratechery.com/feed/",
+      "category": "mega-cap",
+      "weight": 4
+    },
+    {
+      "name": "IEA News",
+      "url": "https://www.iea.org/rss/news.xml",
+      "category": "energy",
+      "weight": 3
+    },
+    {
+      "name": "SpaceNews",
+      "url": "https://spacenews.com/feed/",
+      "category": "deeptech",
+      "weight": 3
+    }
+  ],
+  "keyword_weights": {
+    "must_know": 2.6,
+    "business": 2.1,
+    "strategy": 2.0,
+    "macro": 1.7,
+    "risk": 1.7,
+    "negative": -4.0
+  },
+  "keywords": {
+    "must_know": [
+      "trillion",
+      "billion",
+      "mega-cap",
+      "capex",
+      "data center",
+      "datacenter",
+      "gpu",
+      "chip",
+      "semiconductor",
+      "energy grid",
+      "telecom",
+      "satellite",
+      "defense",
+      "space",
+      "nuclear"
+    ],
+    "business": [
+      "microsoft",
+      "apple",
+      "nvidia",
+      "google",
+      "alphabet",
+      "amazon",
+      "meta",
+      "tesla",
+      "openai",
+      "anthropic",
+      "softbank",
+      "tsmc",
+      "asml",
+      "arm"
+    ],
+    "strategy": [
+      "partnership",
+      "acquisition",
+      "investment",
+      "funding",
+      "ipo",
+      "joint venture",
+      "supply agreement",
+      "export control",
+      "tariff",
+      "regulation"
+    ],
+    "macro": [
+      "electricity",
+      "power",
+      "grid",
+      "cloud",
+      "infrastructure",
+      "manufacturing",
+      "supply chain",
+      "rare earth",
+      "capital expenditure"
+    ],
+    "risk": [
+      "antitrust",
+      "lawsuit",
+      "sanction",
+      "shortage",
+      "delay",
+      "cyberattack",
+      "geopolitical"
+    ],
+    "negative": [
+      "giveaway",
+      "coupon",
+      "sponsored",
+      "webinar",
+      "how to buy"
+    ]
+  }
+}

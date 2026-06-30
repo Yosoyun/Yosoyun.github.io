@@ -1,4 +1,4 @@
-name: AI Telegram Digest
+name: Intelligence Network Digest
 
 on:
   workflow_dispatch:
@@ -10,13 +10,36 @@ permissions:
   contents: read
 
 concurrency:
-  group: ai-telegram-digest
+  group: intelligence-network-digest
   cancel-in-progress: false
 
 jobs:
   send-digest:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include:
+          - label: AI Intelligence
+            channel: ai
+            fresh_hours: 24
+          - label: Global Markets
+            channel: markets
+            fresh_hours: 18
+          - label: World Affairs
+            channel: world
+            fresh_hours: 18
+          - label: Mathematics + Quant Finance
+            channel: math-finance
+            fresh_hours: 168
+          - label: Quantum + Deep Tech
+            channel: quantum
+            fresh_hours: 168
+          - label: Trillion-Dollar Signals
+            channel: trillion
+            fresh_hours: 72
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -26,9 +49,21 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Send Telegram digest
+      - name: Send ${{ matrix.label }} digest
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           AI_DIGEST_DRY_RUN: "0"
-        run: python3 ai-intel-bot/telegram_digest.py --fresh-hours 10
+        run: |
+          if [ "${{ matrix.channel }}" = "ai" ]; then
+            python3 ai-intel-bot/telegram_digest.py \
+              --config ai-intel-bot/config/sources.json \
+              --state ai-intel-bot/state/ai-seen.json \
+              --fresh-hours "${{ matrix.fresh_hours }}" \
+              --max-items 6
+          else
+            python3 ai-intel-bot/telegram_digest.py \
+              --channel "${{ matrix.channel }}" \
+              --fresh-hours "${{ matrix.fresh_hours }}" \
+              --max-items 6
+          fi

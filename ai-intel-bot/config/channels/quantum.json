@@ -1,0 +1,125 @@
+{
+  "digest": {
+    "title": "Quantum + Deep Tech Watch",
+    "empty": "No fresh quantum or deep-tech item cleared the threshold. The stream stays quiet until something matters.",
+    "noise": "RSS/API-friendly science and deep-tech sources only. Prioritizes quantum computing, chips, physics, materials, and hard-tech commercialization.",
+    "per_source": 3,
+    "high_confidence_sources": [
+      "arXiv Quantum Physics",
+      "Physics World Quantum",
+      "Quanta Quantum Physics"
+    ],
+    "sections": [
+      {
+        "label": "Quantum Computing",
+        "categories": ["quantum"]
+      },
+      {
+        "label": "Physics / Materials",
+        "categories": ["science", "research"]
+      },
+      {
+        "label": "Deep-Tech Business",
+        "categories": ["deeptech", "business"]
+      }
+    ]
+  },
+  "feeds": [
+    {
+      "name": "arXiv Quantum Physics",
+      "url": "https://export.arxiv.org/rss/quant-ph",
+      "category": "quantum",
+      "weight": 5
+    },
+    {
+      "name": "Physics World Quantum",
+      "url": "https://physicsworld.com/c/quantum/feed/",
+      "category": "quantum",
+      "weight": 4
+    },
+    {
+      "name": "Quanta Quantum Physics",
+      "url": "https://www.quantamagazine.org/tag/quantum-physics/feed/",
+      "category": "science",
+      "weight": 4
+    },
+    {
+      "name": "MIT Technology Review Computing",
+      "url": "https://www.technologyreview.com/topic/computing/feed/",
+      "category": "deeptech",
+      "weight": 3
+    },
+    {
+      "name": "IEEE Spectrum",
+      "url": "https://spectrum.ieee.org/feeds/feed.rss",
+      "category": "deeptech",
+      "weight": 3
+    },
+    {
+      "name": "NVIDIA Technical Blog",
+      "url": "https://developer.nvidia.com/blog/feed/",
+      "category": "deeptech",
+      "weight": 3
+    }
+  ],
+  "keyword_weights": {
+    "must_know": 2.4,
+    "technical": 2.0,
+    "business": 1.7,
+    "risk": 1.5,
+    "negative": -4.0
+  },
+  "keywords": {
+    "must_know": [
+      "quantum advantage",
+      "quantum supremacy",
+      "fault tolerant",
+      "error correction",
+      "qubit",
+      "breakthrough",
+      "chip",
+      "processor",
+      "superconducting",
+      "photonics"
+    ],
+    "technical": [
+      "quantum computing",
+      "quantum computer",
+      "quantum algorithm",
+      "annealing",
+      "ion trap",
+      "neutral atom",
+      "topological",
+      "materials",
+      "semiconductor",
+      "cryogenic",
+      "simulation"
+    ],
+    "business": [
+      "funding",
+      "startup",
+      "acquisition",
+      "partnership",
+      "cloud",
+      "nvidia",
+      "ibm",
+      "google",
+      "microsoft",
+      "intel"
+    ],
+    "risk": [
+      "post-quantum",
+      "cryptography",
+      "security",
+      "export control",
+      "supply chain"
+    ],
+    "negative": [
+      "webinar",
+      "course",
+      "sponsored",
+      "conference announcement",
+      "podcast"
+    ]
+  }
+}

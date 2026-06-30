@@ -1,0 +1,130 @@
+{
+  "digest": {
+    "title": "Mathematics + Quant Finance",
+    "empty": "No fresh math or quant-finance signal cleared the filter. Research streams can be sparse; quality wins here.",
+    "noise": "Research/RSS-first sources only. Prioritizes math, probability, statistics, optimization, quant finance, and market structure.",
+    "per_source": 3,
+    "high_confidence_sources": [
+      "arXiv Mathematics",
+      "arXiv Quantitative Finance",
+      "arXiv Statistics",
+      "Quanta Mathematics"
+    ],
+    "sections": [
+      {
+        "label": "Mathematics",
+        "categories": ["math", "research"]
+      },
+      {
+        "label": "Quant Finance",
+        "categories": ["qfinance", "markets"]
+      },
+      {
+        "label": "Statistics / Optimization",
+        "categories": ["statistics", "technical"]
+      }
+    ]
+  },
+  "feeds": [
+    {
+      "name": "arXiv Mathematics",
+      "url": "https://export.arxiv.org/rss/math",
+      "category": "math",
+      "weight": 5
+    },
+    {
+      "name": "arXiv Quantitative Finance",
+      "url": "https://export.arxiv.org/rss/q-fin",
+      "category": "qfinance",
+      "weight": 5
+    },
+    {
+      "name": "arXiv Statistics",
+      "url": "https://export.arxiv.org/rss/stat",
+      "category": "statistics",
+      "weight": 4
+    },
+    {
+      "name": "Quanta Mathematics",
+      "url": "https://www.quantamagazine.org/tag/mathematics/feed/",
+      "category": "math",
+      "weight": 4
+    },
+    {
+      "name": "Quantocracy",
+      "url": "https://quantocracy.com/feed/",
+      "category": "qfinance",
+      "weight": 3
+    },
+    {
+      "name": "Wilmott",
+      "url": "https://wilmott.com/feed/",
+      "category": "qfinance",
+      "weight": 3
+    }
+  ],
+  "keyword_weights": {
+    "must_know": 2.3,
+    "research": 2.0,
+    "markets": 1.7,
+    "technical": 1.7,
+    "negative": -4.0
+  },
+  "keywords": {
+    "must_know": [
+      "breakthrough",
+      "proof",
+      "theorem",
+      "new bound",
+      "closed-form",
+      "optimal",
+      "market microstructure",
+      "risk model",
+      "volatility",
+      "portfolio"
+    ],
+    "research": [
+      "number theory",
+      "geometry",
+      "topology",
+      "combinatorics",
+      "probability",
+      "stochastic",
+      "partial differential",
+      "optimization",
+      "graph",
+      "matrix",
+      "measure",
+      "bayesian"
+    ],
+    "markets": [
+      "option",
+      "derivative",
+      "alpha",
+      "factor",
+      "hedging",
+      "arbitrage",
+      "liquidity",
+      "execution",
+      "backtest",
+      "risk"
+    ],
+    "technical": [
+      "algorithm",
+      "estimator",
+      "monte carlo",
+      "simulation",
+      "convex",
+      "regularization",
+      "time series",
+      "causal"
+    ],
+    "negative": [
+      "beginner",
+      "job opening",
+      "conference announcement",
+      "call for papers",
+      "sponsored"
+    ]
+  }
+}

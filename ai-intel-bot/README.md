@@ -1,6 +1,15 @@
-# AI Intelligence Telegram Bot
+# Telegram Intelligence Network
 
-This sends a concise AI intelligence digest to Telegram for mobile reading.
+This sends concise, high-density intelligence digests to Telegram for mobile reading.
+
+Configured streams:
+
+- AI Intelligence
+- Global Markets
+- World Affairs
+- Mathematics + Quant Finance
+- Quantum + Deep Tech
+- Trillion-Dollar Signals
 
 ## Setup
 
@@ -47,10 +56,20 @@ Open `ai-intel-bot/open-on-mobile.html` on your laptop and scan the QR code with
 
 ## Test
 
-Preview the digest without sending:
+Preview the AI digest without sending:
 
 ```bash
 python3 ai-intel-bot/telegram_digest.py --dry-run --include-seen
+```
+
+Preview one of the additional streams:
+
+```bash
+python3 ai-intel-bot/telegram_digest.py --channel markets --dry-run --include-seen
+python3 ai-intel-bot/telegram_digest.py --channel world --dry-run --include-seen
+python3 ai-intel-bot/telegram_digest.py --channel math-finance --dry-run --include-seen
+python3 ai-intel-bot/telegram_digest.py --channel quantum --dry-run --include-seen
+python3 ai-intel-bot/telegram_digest.py --channel trillion --dry-run --include-seen
 ```
 
 Send a one-line connectivity test:
@@ -74,16 +93,16 @@ After pushing the repo to GitHub, add these repository secrets:
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_CHAT_ID`
 
-The workflow runs at 08:00, 14:00, and 20:00 Asia/Kolkata, and can also be run manually from the GitHub Actions tab.
+The workflow runs all six streams at 08:00, 14:00, and 20:00 Asia/Kolkata, and can also be run manually from the GitHub Actions tab.
 
 The public mobile link page is:
 
 ```text
-https://yosoyun.github.io/ai-digest-bot.html?bot=YOUR_BOT_USERNAME
+https://yosoyun.github.io/ai-digest-bot.html
 ```
 
 ## Notes
 
-- The first version uses RSS/API-friendly public feeds.
+- The system uses RSS/API-friendly public feeds.
 - Reddit and X are intentionally not scraped by default. Add official API access before enabling those channels.
 - Sent items are tracked in `ai-intel-bot/state/seen.json` so repeated runs avoid duplicates.
