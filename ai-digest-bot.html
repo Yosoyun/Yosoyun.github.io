@@ -4,106 +4,283 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Intelligence Digest Bot</title>
+  <meta name="theme-color" content="#080808">
   <style>
     :root {
-      color-scheme: light dark;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #f7f8fb;
-      color: #111827;
+      color-scheme: dark;
+      font-family: "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+      background: #080808;
+      color: #f2f0e7;
+      --paper: #f2f0e7;
+      --ink: #080808;
+      --line: #33302a;
+      --muted: #9b9687;
+      --amber: #d8a443;
+      --green: #51d88a;
+      --red: #e05d45;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      display: grid;
-      place-items: center;
-      background:
-        radial-gradient(circle at top left, rgba(34, 158, 217, 0.14), transparent 34rem),
-        linear-gradient(180deg, #ffffff 0%, #f3f5f8 100%);
+      background: #080808;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
     }
 
     main {
-      width: min(92vw, 520px);
-      padding: 42px 22px;
-      text-align: center;
+      width: min(100%, 960px);
+      min-height: 100vh;
+      padding: 28px clamp(18px, 4vw, 46px);
+      box-sizing: border-box;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 34px;
+    }
+
+    .topline,
+    .footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+    }
+
+    .pulse::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 16px rgba(81, 216, 138, 0.62);
+    }
+
+    .console {
+      align-self: center;
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.85fr);
+      gap: clamp(24px, 5vw, 56px);
+      align-items: center;
+    }
+
+    .prompt {
+      color: var(--amber);
+      font-size: 14px;
+      margin-bottom: 16px;
     }
 
     h1 {
-      margin: 0 0 12px;
-      font-size: clamp(30px, 7vw, 48px);
-      line-height: 1.02;
+      margin: 0;
+      max-width: 11ch;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(46px, 7vw, 86px);
+      font-weight: 700;
+      line-height: 0.92;
       letter-spacing: 0;
     }
 
     p {
-      margin: 0 auto 20px;
-      max-width: 36rem;
-      color: #4b5563;
-      font-size: 17px;
+      margin: 20px 0 0;
+      max-width: 36em;
+      color: var(--muted);
+      font-size: clamp(15px, 2vw, 18px);
       line-height: 1.55;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-top: 28px;
     }
 
     .qr {
       display: none;
-      width: min(74vw, 320px);
+      width: min(70vw, 300px);
       height: auto;
-      margin: 24px auto 16px;
-      padding: 14px;
-      border: 1px solid #e5e7eb;
+      margin: 0 auto;
+      padding: 12px;
+      border: 1px solid var(--line);
       border-radius: 8px;
-      background: #ffffff;
+      background: var(--paper);
     }
 
     .button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      min-height: 50px;
-      padding: 0 22px;
+      min-height: 52px;
+      padding: 0 20px;
       border-radius: 8px;
-      background: #229ed9;
-      color: #ffffff;
+      border: 1px solid var(--paper);
+      background: var(--paper);
+      color: var(--ink);
       font-weight: 800;
       text-decoration: none;
+      box-shadow: 5px 5px 0 var(--amber);
+      transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+
+    .button:hover {
+      transform: translate(2px, 2px);
+      box-shadow: 3px 3px 0 var(--amber);
     }
 
     .muted {
-      margin-top: 18px;
+      margin: 0;
       font-size: 14px;
-      color: #6b7280;
+      color: var(--muted);
       overflow-wrap: anywhere;
     }
 
-    @media (prefers-color-scheme: dark) {
-      :root {
-        background: #0f172a;
-        color: #f8fafc;
+    .terminal {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(8, 8, 8, 0.86);
+      box-shadow: inset 0 0 0 1px rgba(242, 240, 231, 0.04);
+      overflow: hidden;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dots span {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .dots span:nth-child(1) {
+      background: var(--red);
+    }
+
+    .dots span:nth-child(2) {
+      background: var(--amber);
+    }
+
+    .dots span:nth-child(3) {
+      background: var(--green);
+    }
+
+    .terminal-body {
+      padding: 20px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .signal {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .signal strong {
+      color: var(--paper);
+      font-weight: 700;
+    }
+
+    .marker {
+      color: var(--green);
+    }
+
+    code {
+      color: var(--amber);
+      font-family: inherit;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        gap: 24px;
       }
 
-      body {
-        background:
-          radial-gradient(circle at top left, rgba(34, 158, 217, 0.24), transparent 34rem),
-          linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      .topline,
+      .footer {
+        align-items: flex-start;
+        flex-direction: column;
       }
 
-      p,
-      .muted {
-        color: #cbd5e1;
+      .console {
+        grid-template-columns: 1fr;
       }
 
       .qr {
-        border-color: #334155;
+        width: min(74vw, 260px);
       }
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>AI Intelligence Digest</h1>
-    <p id="intro">Open the Telegram bot, tap Start, and the AI digest will arrive on your phone.</p>
-    <img id="qr" class="qr" alt="Telegram bot QR code">
-    <p><a id="bot-link" class="button" href="https://t.me/BotFather">Open Telegram</a></p>
-    <p id="status" class="muted">Bot username is not configured yet. Add <code>?bot=your_bot_username</code> to this URL after creating the bot.</p>
+    <header class="topline">
+      <span>Terminal Noir / AI dispatch</span>
+      <span class="pulse">GitHub Actions armed</span>
+    </header>
+
+    <section class="console" aria-label="AI Intelligence Digest bot">
+      <div>
+        <div class="prompt">$ connect --telegram --signal=ai</div>
+        <h1>AI Intelligence Digest</h1>
+        <p id="intro">Open the Telegram bot, tap Start, and your AI market, model, research, and infrastructure brief lands on mobile.</p>
+        <div class="actions">
+          <a id="bot-link" class="button" href="https://t.me/BotFather">Open Telegram</a>
+          <p id="status" class="muted">Bot username is not configured yet. Add <code>?bot=your_bot_username</code> to this URL.</p>
+        </div>
+      </div>
+
+      <aside class="terminal" aria-label="Digest status">
+        <div class="terminal-bar">
+          <span>digest.log</span>
+          <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>
+        </div>
+        <div class="terminal-body">
+          <img id="qr" class="qr" alt="Telegram bot QR code">
+          <div class="signal"><span class="marker">01</span><span><strong>Models</strong><br>Frontier releases, LLM infra, agents, benchmarks.</span></div>
+          <div class="signal"><span class="marker">02</span><span><strong>Markets</strong><br>Billion-dollar funding, chips, cloud, regulation.</span></div>
+          <div class="signal"><span class="marker">03</span><span><strong>Filter</strong><br>Noise removed before it reaches your phone.</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="footer">
+      <span>08:00 / 14:00 / 20:00 IST</span>
+      <span>Telegram delivery</span>
+    </footer>
   </main>
 
   <script>
