@@ -174,6 +174,19 @@
     }
     textarea.large { min-height: 300px; }
     textarea.medium { min-height: 220px; }
+    pre {
+      white-space: pre-wrap;
+      overflow: auto;
+      margin: 10px 0 16px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #faf5ed;
+      color: #3d3228;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 13px;
+      line-height: 1.45;
+    }
     .field-row { display: grid; grid-template-columns: minmax(0, .7fr) minmax(0, 1fr); gap: 10px; }
     .notice {
       border: 1px solid #dfc284;
@@ -260,6 +273,75 @@
     }
     .file-item span:last-child { color: var(--muted); white-space: nowrap; }
     .hidden-file { display: none; }
+    .extract-status {
+      min-height: 32px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #faf5ed;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .extract-status.busy {
+      border-color: #dfc284;
+      color: #624414;
+      background: #fff8e5;
+    }
+    .extract-status.done {
+      border-color: #b7d3c6;
+      color: #1f5b40;
+      background: #eef8f3;
+    }
+    .extract-status.error {
+      border-color: #e2b5b5;
+      color: #7c2525;
+      background: #fff1f1;
+    }
+    .guide-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .guide-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      padding: 14px;
+      min-height: 132px;
+    }
+    .guide-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+    }
+    .guide-card p {
+      margin: 0;
+      color: #3b4653;
+      line-height: 1.5;
+    }
+    .guide-kicker {
+      color: var(--blue);
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    .support-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .support-list div {
+      border-left: 4px solid var(--amber);
+      padding: 8px 10px;
+      background: #faf5ed;
+      border-radius: 6px;
+      color: #3b4653;
+      line-height: 1.45;
+    }
     @media (max-width: 1180px) {
       .grader-layout, .record-grid, .report-layout { grid-template-columns: 1fr; }
     }
@@ -267,7 +349,7 @@
       .topbar { position: static; align-items: flex-start; flex-direction: column; }
       .top-actions, .tabs { justify-content: flex-start; }
       .workspace { padding: 14px; }
-      .metrics, .two-col, .field-row { grid-template-columns: 1fr; }
+      .metrics, .two-col, .field-row, .guide-grid { grid-template-columns: 1fr; }
       .score { font-size: 34px; }
     }
     @media print {
@@ -290,6 +372,7 @@
       </div>
       <nav class="tabs" aria-label="Workspace tabs">
         <button class="tab active" data-tab="grade">Grade Copies</button>
+        <button class="tab" data-tab="guide">How To Use</button>
         <button class="tab" data-tab="records">Class Records</button>
         <button class="tab" data-tab="report">Project Report</button>
       </nav>
@@ -313,12 +396,16 @@
           <section class="panel">
             <div class="panel-head">
               <h2>Question Paper</h2>
-              <div class="panel-actions"><button class="btn small" id="clearPaperBtn">Clear</button></div>
+              <div class="panel-actions">
+                <button class="btn small" id="paperExtractBtn">Read File</button>
+                <button class="btn small" id="clearPaperBtn">Clear</button>
+              </div>
             </div>
             <div class="panel-body">
               <label>Paper Text<textarea id="paperText" class="medium" placeholder="Paste question paper text here"></textarea></label>
-              <label>Attach Paper Or Key<input type="file" id="paperFiles" multiple accept=".pdf,image/*,.txt,.json"></label>
+              <label>Attach Question Paper<input type="file" id="paperFiles" multiple accept=".pdf,image/*,.txt,.md,.csv,.json"></label>
               <div class="file-list" id="paperFileList"></div>
+              <div class="extract-status" id="paperStatus">Supports TXT, Markdown, CSV, JSON, PDF, screenshots, and scanned images. PDF.js and Tesseract.js run in this browser.</div>
               <div class="notice">Public website mode keeps records in this browser. No student file is uploaded to a server.</div>
             </div>
           </section>
@@ -328,11 +415,14 @@
               <h2>Solution Key</h2>
               <div class="panel-actions">
                 <button class="btn small" id="rubricUploadBtn">Import</button>
+                <button class="btn small" id="rubricReadBtn">Read Key</button>
+                <button class="btn small" id="draftRubricBtn">Draft Rubric</button>
                 <button class="btn small" id="validateRubricBtn">Validate</button>
               </div>
             </div>
             <div class="panel-body">
-              <input class="hidden-file" type="file" id="rubricFile" accept=".json">
+              <input class="hidden-file" type="file" id="rubricFile" accept=".json,.txt,.md,.csv,.pdf,image/*">
+              <label>Solution Key Text<textarea id="solutionText" class="medium" placeholder="Paste solution key text, or import a key file. Example: Q1: C&#10;Q2: White light splits into colours through a prism."></textarea></label>
               <label>Rubric JSON<textarea id="rubricText" class="large" spellcheck="false"></textarea></label>
               <div class="notice" id="rubricStatus">Rubric waiting.</div>
             </div>
@@ -343,11 +433,12 @@
               <h2>Student Copy</h2>
               <div class="panel-actions">
                 <button class="btn small" id="answersUploadBtn">Import</button>
+                <button class="btn small" id="scanExtractBtn">Read Copy</button>
                 <button class="btn small green" id="saveStudentBtn">Save Student</button>
               </div>
             </div>
             <div class="panel-body">
-              <input class="hidden-file" type="file" id="answersFile" accept=".json">
+              <input class="hidden-file" type="file" id="answersFile" accept=".json,.txt,.md,.csv,.pdf,image/*">
               <div class="field-row">
                 <label>Student ID<input type="text" id="studentId" placeholder="S001"></label>
                 <label>Student Name<input type="text" id="studentName" placeholder="Student name"></label>
@@ -355,6 +446,7 @@
               <label>Answers JSON<textarea id="answersText" class="medium" spellcheck="false"></textarea></label>
               <label>Attach Scanned Copy<input type="file" id="scanFiles" multiple accept=".pdf,image/*"></label>
               <div class="file-list" id="scanFileList"></div>
+              <div class="extract-status" id="scanStatus">Use JSON for best accuracy. For screenshots, images, and scanned PDFs, click Read Copy and review the extracted text before grading.</div>
             </div>
           </section>
         </div>
@@ -369,6 +461,48 @@
           </div>
           <div class="panel-body" id="resultArea"><div class="empty">No result yet.</div></div>
         </section>
+      </section>
+
+      <section class="view" id="view-guide">
+        <div class="report-layout">
+          <article class="article">
+            <div class="guide-kicker">Complete teacher guide</div>
+            <h1>How To Use Student Copy Grader</h1>
+            <p>This app helps teachers check answer copies faster. It reads question papers, solution keys, and student answers locally in the browser, then applies a marking rubric and shows question-wise marks with deduction reasons.</p>
+
+            <div class="guide-grid">
+              <div class="guide-card"><strong>1. Load Paper</strong><p>Paste the question paper text or attach a TXT, Markdown, CSV, JSON, PDF, screenshot, or scanned image. Click Read File to extract text.</p></div>
+              <div class="guide-card"><strong>2. Load Key</strong><p>Import a rubric JSON for best results, or upload/paste a plain solution key. Click Draft Rubric to create an editable first marking scheme.</p></div>
+              <div class="guide-card"><strong>3. Add Student</strong><p>Enter student ID and name. Upload answer JSON, text, PDF, screenshot, or scanned copy. Click Read Copy for OCR when needed.</p></div>
+              <div class="guide-card"><strong>4. Review OCR</strong><p>OCR is helpful, not final. Check the extracted answers, especially handwriting, formulas, diagrams, and crossed-out work.</p></div>
+              <div class="guide-card"><strong>5. Grade</strong><p>Click Grade. The app gives marks, confidence, and feedback. Any unclear or partial answer is marked for teacher review.</p></div>
+              <div class="guide-card"><strong>6. Save & Export</strong><p>Save the student result, export class CSV, download JSON backup, or download an HTML report for sharing.</p></div>
+            </div>
+
+            <h2>Supported Files</h2>
+            <div class="support-list">
+              <div><strong>Best format:</strong> Rubric JSON and student answers JSON. This gives the most reliable marking.</div>
+              <div><strong>Readable text:</strong> TXT, Markdown, CSV, and JSON are read directly in the browser.</div>
+              <div><strong>PDF:</strong> PDF.js extracts text from normal PDFs. If a PDF is scanned, the app can OCR rendered pages.</div>
+              <div><strong>Images and screenshots:</strong> Tesseract.js OCR reads PNG, JPG, and other browser-supported image files.</div>
+              <div><strong>Teacher decision:</strong> Final marks should be approved by a teacher. The app should not be treated as an autonomous board examiner.</div>
+            </div>
+          </article>
+
+          <aside class="article">
+            <h2>Quick Format Examples</h2>
+            <p>Solution key text can be simple:</p>
+            <pre>Q1: C
+Q2: White light splits into colours through a prism.
+Q3: 9.8</pre>
+            <p>Student answers can also be simple:</p>
+            <pre>Q1: Option C
+Q2: White light splits into seven colours.
+Q3: 9.81 m/s^2</pre>
+            <h2>Privacy</h2>
+            <p>Files are processed in the browser. The public GitHub Pages app does not store student copies on a server.</p>
+          </aside>
+        </div>
       </section>
 
       <section class="view" id="view-records">
@@ -413,6 +547,12 @@
               <li>Question-wise feedback and review flags.</li>
               <li>Browser-local records and exports.</li>
             </ul>
+            <h2>Open Source Engines</h2>
+            <ul>
+              <li>PDF.js reads text from normal PDFs and renders scanned PDF pages for OCR.</li>
+              <li>Tesseract.js performs browser-side OCR for screenshots, images, and scanned pages.</li>
+              <li>The rubric checker is local JavaScript in this project, with no paid API call.</li>
+            </ul>
             <h2>Handwriting OCR Roadmap</h2>
             <p>The static website version does not claim perfect handwritten OCR. The next offline layer should connect OCR engines such as PaddleOCR, docTR, TrOCR, Tesseract, and math OCR tools such as pix2tex or Pix2Text. The teacher should verify OCR before final marks are locked.</p>
             <h2>Evaluation Plan</h2>
@@ -446,6 +586,11 @@
 
   <script>
     const STORAGE_KEY = "student-copy-grader-state-v1";
+    const PDFJS_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.mjs";
+    const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.mjs";
+    const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js";
+    let pdfJsPromise = null;
+    let tesseractPromise = null;
     const sampleRubric = {
       exam: { title: "CBSE Class X Science Demo", board: "CBSE", class_level: "X", subject: "Science", max_marks: 5 },
       questions: [
@@ -470,6 +615,7 @@
     };
     const defaultState = {
       paperText: "Class X Science Demo\nQ1. Choose the correct option.\nQ2. What is dispersion of light?\nQ3. Write the value of acceleration due to gravity near Earth.",
+      solutionText: "Q1: C\nQ2: White light splits into colours through a prism.\nQ3: 9.8",
       rubricText: JSON.stringify(sampleRubric, null, 2),
       studentId: "S001",
       studentName: "Demo Student",
@@ -482,6 +628,7 @@
     let currentResult = null;
     const el = {
       paperText: document.querySelector("#paperText"),
+      solutionText: document.querySelector("#solutionText"),
       rubricText: document.querySelector("#rubricText"),
       answersText: document.querySelector("#answersText"),
       studentId: document.querySelector("#studentId"),
@@ -490,6 +637,8 @@
       scanFiles: document.querySelector("#scanFiles"),
       paperFileList: document.querySelector("#paperFileList"),
       scanFileList: document.querySelector("#scanFileList"),
+      paperStatus: document.querySelector("#paperStatus"),
+      scanStatus: document.querySelector("#scanStatus"),
       resultArea: document.querySelector("#resultArea"),
       recordsArea: document.querySelector("#recordsArea"),
       rubricStatus: document.querySelector("#rubricStatus"),
@@ -517,6 +666,7 @@
     }
     function syncFieldsFromState() {
       el.paperText.value = state.paperText || "";
+      el.solutionText.value = state.solutionText || "";
       el.rubricText.value = state.rubricText || "";
       el.studentId.value = state.studentId || "";
       el.studentName.value = state.studentName || "";
@@ -524,6 +674,7 @@
     }
     function syncStateFromFields() {
       state.paperText = el.paperText.value;
+      state.solutionText = el.solutionText.value;
       state.rubricText = el.rubricText.value;
       state.studentId = el.studentId.value.trim();
       state.studentName = el.studentName.value.trim();
@@ -662,7 +813,7 @@
     }
     function normalizeOption(value) {
       const words = normalizeText(value).split(" ").filter(Boolean);
-      if (words[0] === "option" && words.length > 1) return words[1];
+      if (["option", "answer", "ans"].includes(words[0]) && words.length > 1) return words[1];
       return words[0] || "";
     }
     function firstNumber(value) {
@@ -778,6 +929,315 @@
       const files = Array.from(input.files || []).map(file => ({ name: file.name, size: formatBytes(file.size), type: file.type || "file" }));
       state[targetKey] = files;
       saveState();
+    }
+    function setStatus(target, message, kind = "") {
+      if (!target) return;
+      target.textContent = message;
+      target.classList.remove("busy", "done", "error");
+      if (kind) target.classList.add(kind);
+    }
+    function fileExtension(file) {
+      const name = String(file?.name || "").toLowerCase();
+      const match = name.match(/\.([a-z0-9]+)$/);
+      return match ? match[1] : "";
+    }
+    function isDirectTextFile(file) {
+      const ext = fileExtension(file);
+      return String(file.type || "").startsWith("text/") || ["txt", "md", "csv", "json"].includes(ext);
+    }
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(reader.error || new Error("Unable to read file."));
+        reader.readAsText(file);
+      });
+    }
+    function readFileAsArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error("Unable to read file."));
+        reader.readAsArrayBuffer(file);
+      });
+    }
+    async function loadPdfJs() {
+      if (!pdfJsPromise) {
+        pdfJsPromise = import(PDFJS_URL).then(module => {
+          module.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+          return module;
+        });
+      }
+      return pdfJsPromise;
+    }
+    async function loadTesseract() {
+      if (window.Tesseract) return window.Tesseract;
+      if (!tesseractPromise) {
+        tesseractPromise = new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = TESSERACT_URL;
+          script.async = true;
+          script.onload = () => resolve(window.Tesseract);
+          script.onerror = () => reject(new Error("Unable to load Tesseract.js OCR library."));
+          document.head.appendChild(script);
+        });
+      }
+      return tesseractPromise;
+    }
+    async function extractTextFromFile(file, statusEl, options = {}) {
+      const ext = fileExtension(file);
+      if (isDirectTextFile(file)) return readFileAsText(file);
+      if (ext === "pdf" || file.type === "application/pdf") {
+        return extractTextFromPdf(file, statusEl, options);
+      }
+      if (String(file.type || "").startsWith("image/") || ["png", "jpg", "jpeg", "webp", "bmp", "gif", "tif", "tiff"].includes(ext)) {
+        return ocrImage(file, statusEl);
+      }
+      throw new Error(`${file.name} is not a supported file type.`);
+    }
+    async function extractTextFromPdf(file, statusEl, options = {}) {
+      setStatus(statusEl, `Reading PDF text from ${file.name}...`, "busy");
+      const pdfjs = await loadPdfJs();
+      const data = await readFileAsArrayBuffer(file);
+      const pdf = await pdfjs.getDocument({ data }).promise;
+      const pageTexts = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        const text = textContent.items.map(item => item.str || "").join(" ").replace(/\s+/g, " ").trim();
+        if (text) pageTexts.push(`--- Page ${pageNumber} ---\n${text}`);
+      }
+      const extracted = pageTexts.join("\n\n").trim();
+      if (extracted.length > 30 || options.skipOcrFallback) return extracted;
+      if (!options.ocrScannedPdf) return extracted;
+      return ocrPdfPages(pdf, statusEl);
+    }
+    async function ocrPdfPages(pdf, statusEl) {
+      const Tesseract = await loadTesseract();
+      const pageTexts = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        setStatus(statusEl, `OCR on scanned PDF page ${pageNumber}/${pdf.numPages}...`, "busy");
+        const page = await pdf.getPage(pageNumber);
+        const viewport = page.getViewport({ scale: 1.6 });
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.ceil(viewport.width);
+        canvas.height = Math.ceil(viewport.height);
+        const context = canvas.getContext("2d");
+        await page.render({ canvasContext: context, viewport }).promise;
+        const result = await Tesseract.recognize(canvas, "eng");
+        const text = String(result?.data?.text || "").trim();
+        if (text) pageTexts.push(`--- Page ${pageNumber} OCR ---\n${text}`);
+      }
+      return pageTexts.join("\n\n").trim();
+    }
+    async function ocrImage(file, statusEl) {
+      setStatus(statusEl, `OCR reading ${file.name}...`, "busy");
+      const Tesseract = await loadTesseract();
+      const result = await Tesseract.recognize(file, "eng", {
+        logger: progress => {
+          if (progress.status) {
+            const pct = progress.progress ? ` ${Math.round(progress.progress * 100)}%` : "";
+            setStatus(statusEl, `OCR ${progress.status}${pct}`, "busy");
+          }
+        }
+      });
+      return String(result?.data?.text || "").trim();
+    }
+    async function extractFilesToTextarea(input, textarea, statusEl, options = {}) {
+      const files = Array.from(input.files || []);
+      if (!files.length) {
+        setStatus(statusEl, "Choose a file first.", "error");
+        return "";
+      }
+      try {
+        const chunks = [];
+        for (const file of files) {
+          setStatus(statusEl, `Reading ${file.name}...`, "busy");
+          const text = await extractTextFromFile(file, statusEl, options);
+          chunks.push(`--- ${file.name} ---\n${text || "[No text detected]"}`);
+        }
+        const combined = chunks.join("\n\n").trim();
+        textarea.value = options.append && textarea.value.trim()
+          ? `${textarea.value.trim()}\n\n${combined}`
+          : combined;
+        syncStateFromFields();
+        saveState();
+        setStatus(statusEl, `Read ${files.length} file${files.length === 1 ? "" : "s"}. Review extracted text before grading.`, "done");
+        return combined;
+      } catch (error) {
+        setStatus(statusEl, error.message, "error");
+        return "";
+      }
+    }
+    async function readSolutionKeyFile() {
+      const files = Array.from(el.rubricFile.files || []);
+      if (!files.length) {
+        setStatus(el.rubricStatus, "Choose a solution key or rubric file first.", "error");
+        return;
+      }
+      const file = files[0];
+      try {
+        setStatus(el.rubricStatus, `Reading ${file.name}...`, "busy");
+        const text = await extractTextFromFile(file, el.rubricStatus, { ocrScannedPdf: true });
+        const trimmed = text.trim();
+        if (fileExtension(file) === "json") {
+          const data = JSON.parse(trimmed);
+          if (data.questions) {
+            el.rubricText.value = JSON.stringify(data, null, 2);
+            el.solutionText.value = "";
+            validateRubric();
+          } else if (data.answers) {
+            el.solutionText.value = Object.entries(data.answers).map(([key, value]) => `Q${key}: ${value}`).join("\n");
+            draftRubricFromSolution();
+          } else {
+            el.solutionText.value = trimmed;
+          }
+        } else {
+          el.solutionText.value = trimmed;
+          draftRubricFromSolution();
+        }
+        syncStateFromFields();
+        saveState();
+        setStatus(el.rubricStatus, "Solution key read. Check the draft rubric before grading.", "done");
+      } catch (error) {
+        setStatus(el.rubricStatus, error.message, "error");
+      }
+    }
+    async function readStudentAnswerFile() {
+      const files = Array.from(el.answersFile.files || []);
+      if (!files.length) {
+        setStatus(el.scanStatus, "Choose a student answer file first.", "error");
+        return;
+      }
+      const file = files[0];
+      try {
+        setStatus(el.scanStatus, `Reading ${file.name}...`, "busy");
+        const text = await extractTextFromFile(file, el.scanStatus, { ocrScannedPdf: true });
+        applyStudentText(text, file);
+        setStatus(el.scanStatus, "Student answer file read. Review extracted answers before grading.", "done");
+      } catch (error) {
+        setStatus(el.scanStatus, error.message, "error");
+      }
+    }
+    async function readScannedCopyFiles() {
+      const text = await extractFilesToTextarea(el.scanFiles, el.answersText, el.scanStatus, { ocrScannedPdf: true });
+      if (text) applyStudentText(text);
+    }
+    function applyStudentText(text, file = null) {
+      const trimmed = String(text || "").trim();
+      if (!trimmed) return;
+      if (file && fileExtension(file) === "json") {
+        const data = JSON.parse(trimmed);
+        if (data.student) {
+          el.studentId.value = data.student.id || el.studentId.value;
+          el.studentName.value = data.student.name || el.studentName.value;
+        }
+        el.answersText.value = JSON.stringify(data.answers || data, null, 2);
+      } else {
+        const answers = parseQuestionEntries(trimmed);
+        if (answers.length) {
+          el.answersText.value = JSON.stringify(Object.fromEntries(answers.map(item => [item.id, item.text])), null, 2);
+        } else {
+          el.answersText.value = JSON.stringify({ "1": trimmed }, null, 2);
+        }
+      }
+      syncStateFromFields();
+      saveState();
+    }
+    function parseQuestionEntries(text) {
+      const clean = String(text || "").replace(/\r/g, "").trim();
+      if (!clean) return [];
+      const pattern = /(?:^|\n)\s*(?:q(?:uestion)?\s*)?(\d+[a-z]?)\s*[\).:\-]\s*/gi;
+      const matches = [...clean.matchAll(pattern)];
+      if (!matches.length) return [];
+      return matches.map((match, index) => {
+        const start = match.index + match[0].length;
+        const end = index + 1 < matches.length ? matches[index + 1].index : clean.length;
+        return {
+          id: match[1],
+          text: clean.slice(start, end).trim().replace(/\n{3,}/g, "\n\n")
+        };
+      }).filter(item => item.text);
+    }
+    function draftRubricFromSolution() {
+      const keyText = el.solutionText.value.trim();
+      const entries = parseQuestionEntries(keyText);
+      if (!entries.length) {
+        setStatus(el.rubricStatus, "Could not find Q1:, Q2:, etc. in the solution key text.", "error");
+        return;
+      }
+      const questions = entries.map(entry => {
+        const marks = extractMarks(entry.text) || 1;
+        const answer = removeMarks(entry.text);
+        const type = inferQuestionType(answer);
+        if (type === "mcq") {
+          return { id: entry.id, marks, type, answer: normalizeOption(answer).toUpperCase() };
+        }
+        if (type === "numeric") {
+          return { id: entry.id, marks, type, answer: String(firstNumber(answer)), tolerance: 0 };
+        }
+        const keywords = pickKeywords(answer);
+        return {
+          id: entry.id,
+          marks,
+          type: "short_answer",
+          answer,
+          rubric: [
+            {
+              id: "main_value_point",
+              marks,
+              description: `Matches the main value point for Q${entry.id}`,
+              keywords,
+              min_keywords: Math.min(2, Math.max(1, keywords.length)),
+              reference: answer,
+              similarity_threshold: 0.45
+            }
+          ]
+        };
+      });
+      const totalMarks = questions.reduce((sum, question) => sum + Number(question.marks || 0), 0);
+      const title = firstUsefulLine(el.paperText.value) || "Student Copy Grader Exam";
+      const rubric = {
+        exam: {
+          title,
+          board: "CBSE",
+          max_marks: totalMarks
+        },
+        questions
+      };
+      el.rubricText.value = JSON.stringify(rubric, null, 2);
+      validateRubric();
+      syncStateFromFields();
+      saveState();
+      setStatus(el.rubricStatus, `Drafted ${questions.length} rubric item${questions.length === 1 ? "" : "s"}. Edit marks and value points before final use.`, "done");
+    }
+    function extractMarks(text) {
+      const match = String(text || "").match(/(?:\[|\(|\b)(\d+(?:\.\d+)?)\s*(?:marks?|m)(?:\]|\)|\b)/i);
+      return match ? Number(match[1]) : null;
+    }
+    function removeMarks(text) {
+      return String(text || "").replace(/(?:\[|\(|\b)\d+(?:\.\d+)?\s*(?:marks?|m)(?:\]|\)|\b)/gi, "").trim();
+    }
+    function inferQuestionType(answer) {
+      const option = normalizeOption(answer);
+      if (/^[abcd]$/i.test(option)) return "mcq";
+      const numeric = firstNumber(answer);
+      const words = normalizeText(answer).split(" ").filter(Boolean);
+      if (numeric !== null && words.length <= 4) return "numeric";
+      return "short_answer";
+    }
+    function pickKeywords(text) {
+      const stop = new Set("the a an and or of to in is are was were be been being for from with by as this that these those into through due while when what why how it its their there here on at".split(" "));
+      const words = normalizeText(text).split(" ").filter(word => word.length > 2 && !stop.has(word) && !/^\d+$/.test(word));
+      const unique = [];
+      for (const word of words) {
+        if (!unique.includes(word)) unique.push(word);
+        if (unique.length >= 8) break;
+      }
+      return unique;
+    }
+    function firstUsefulLine(text) {
+      return String(text || "").split(/\n+/).map(line => line.trim()).find(line => line.length > 3) || "";
     }
     function loadRecord(index) {
       const record = state.records[index];
@@ -944,7 +1404,11 @@
     document.querySelector("#validateRubricBtn").addEventListener("click", validateRubric);
     document.querySelector("#clearPaperBtn").addEventListener("click", () => { el.paperText.value = ""; saveState(); });
     document.querySelector("#rubricUploadBtn").addEventListener("click", () => el.rubricFile.click());
+    document.querySelector("#rubricReadBtn").addEventListener("click", readSolutionKeyFile);
+    document.querySelector("#draftRubricBtn").addEventListener("click", draftRubricFromSolution);
     document.querySelector("#answersUploadBtn").addEventListener("click", () => el.answersFile.click());
+    document.querySelector("#paperExtractBtn").addEventListener("click", () => extractFilesToTextarea(el.paperFiles, el.paperText, el.paperStatus, { ocrScannedPdf: true }));
+    document.querySelector("#scanExtractBtn").addEventListener("click", readScannedCopyFiles);
     document.querySelector("#downloadHtmlBtn").addEventListener("click", () => downloadCurrentHtml());
     document.querySelector("#downloadJsonBtn").addEventListener("click", downloadCurrentJson);
     document.querySelector("#exportCsvBtn").addEventListener("click", exportCsv);
@@ -957,19 +1421,8 @@
     });
     el.paperFiles.addEventListener("change", () => captureFileList(el.paperFiles, "paperFiles"));
     el.scanFiles.addEventListener("change", () => captureFileList(el.scanFiles, "scanFiles"));
-    el.rubricFile.addEventListener("change", () => readJsonFile(el.rubricFile, data => {
-      el.rubricText.value = JSON.stringify(data, null, 2);
-      validateRubric();
-      saveState();
-    }));
-    el.answersFile.addEventListener("change", () => readJsonFile(el.answersFile, data => {
-      if (data.student) {
-        el.studentId.value = data.student.id || el.studentId.value;
-        el.studentName.value = data.student.name || el.studentName.value;
-      }
-      el.answersText.value = JSON.stringify(data.answers || data, null, 2);
-      saveState();
-    }));
+    el.rubricFile.addEventListener("change", readSolutionKeyFile);
+    el.answersFile.addEventListener("change", readStudentAnswerFile);
     el.recordsArea.addEventListener("click", event => {
       const loadButton = event.target.closest("[data-load-record]");
       const deleteButton = event.target.closest("[data-delete-record]");
@@ -979,7 +1432,7 @@
       if (reportButton) downloadCurrentHtml(Number(reportButton.dataset.reportRecord));
     });
     ["input", "change"].forEach(eventName => {
-      [el.paperText, el.rubricText, el.answersText, el.studentId, el.studentName].forEach(input => {
+      [el.paperText, el.solutionText, el.rubricText, el.answersText, el.studentId, el.studentName].forEach(input => {
         input.addEventListener(eventName, () => syncStateFromFields());
       });
     });
