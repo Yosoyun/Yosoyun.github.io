@@ -1,3 +1,6 @@
 tmp/
 .DS_Store
 __pycache__/
+ai-intel-bot/.env
+ai-intel-bot/state/*.json
+ai-intel-bot/open-on-mobile.html

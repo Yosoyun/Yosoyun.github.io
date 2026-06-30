@@ -1,0 +1,166 @@
+{
+  "feeds": [
+    {
+      "name": "arXiv cs.AI",
+      "url": "https://export.arxiv.org/rss/cs.AI",
+      "category": "research",
+      "weight": 4
+    },
+    {
+      "name": "arXiv cs.CL",
+      "url": "https://export.arxiv.org/rss/cs.CL",
+      "category": "research",
+      "weight": 4
+    },
+    {
+      "name": "Hugging Face Blog",
+      "url": "https://huggingface.co/blog/feed.xml",
+      "category": "technical",
+      "weight": 4
+    },
+    {
+      "name": "Google AI Blog",
+      "url": "https://blog.google/technology/ai/rss/",
+      "category": "technical",
+      "weight": 4
+    },
+    {
+      "name": "Google DeepMind",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "category": "research",
+      "weight": 5
+    },
+    {
+      "name": "OpenAI News",
+      "url": "https://openai.com/news/rss.xml",
+      "category": "frontier",
+      "weight": 5
+    },
+    {
+      "name": "NVIDIA AI Blog",
+      "url": "https://blogs.nvidia.com/blog/category/deep-learning/feed/",
+      "category": "infrastructure",
+      "weight": 4
+    },
+    {
+      "name": "VentureBeat AI",
+      "url": "https://venturebeat.com/category/ai/feed/",
+      "category": "business",
+      "weight": 3
+    },
+    {
+      "name": "TechCrunch AI",
+      "url": "https://techcrunch.com/category/artificial-intelligence/feed/",
+      "category": "business",
+      "weight": 3
+    },
+    {
+      "name": "MIT Technology Review AI",
+      "url": "https://www.technologyreview.com/topic/artificial-intelligence/feed/",
+      "category": "business",
+      "weight": 3
+    },
+    {
+      "name": "The Decoder",
+      "url": "https://the-decoder.com/feed/",
+      "category": "frontier",
+      "weight": 3
+    },
+    {
+      "name": "Latent Space",
+      "url": "https://www.latent.space/feed",
+      "category": "technical",
+      "weight": 4
+    },
+    {
+      "name": "Simon Willison",
+      "url": "https://simonwillison.net/atom/everything/",
+      "category": "technical",
+      "weight": 4
+    },
+    {
+      "name": "Stratechery",
+      "url": "https://stratechery.com/feed/",
+      "category": "business",
+      "weight": 3
+    }
+  ],
+  "keywords": {
+    "must_know": [
+      "frontier model",
+      "new model",
+      "model release",
+      "release",
+      "launch",
+      "benchmark",
+      "state-of-the-art",
+      "sota",
+      "agent",
+      "agents",
+      "reasoning",
+      "multimodal",
+      "open weights",
+      "open source",
+      "partnership",
+      "enterprise",
+      "safety",
+      "alignment"
+    ],
+    "research": [
+      "llm",
+      "large language model",
+      "transformer",
+      "moe",
+      "mixture of experts",
+      "inference",
+      "training",
+      "rlhf",
+      "reinforcement learning",
+      "distillation",
+      "context",
+      "token",
+      "retrieval",
+      "rag",
+      "eval",
+      "benchmark",
+      "math",
+      "proof",
+      "theorem",
+      "agent",
+      "reasoning"
+    ],
+    "business": [
+      "billion",
+      "trillion",
+      "valuation",
+      "funding",
+      "acquisition",
+      "merger",
+      "ipo",
+      "revenue",
+      "capex",
+      "data center",
+      "datacenter",
+      "gpu",
+      "chip",
+      "nvidia",
+      "cloud",
+      "microsoft",
+      "google",
+      "amazon",
+      "meta",
+      "apple",
+      "regulation",
+      "policy",
+      "export control"
+    ],
+    "negative": [
+      "coupon",
+      "giveaway",
+      "sponsored",
+      "webinar",
+      "course discount",
+      "press release roundup"
+    ]
+  }
+}
