@@ -285,7 +285,8 @@
 
   <script>
     const params = new URLSearchParams(window.location.search);
-    const bot = (params.get("bot") || "").replace(/^@/, "").trim();
+    const defaultBot = "YosoyunAIDigestBot";
+    const bot = (params.get("bot") || defaultBot).replace(/^@/, "").trim();
     const botLink = document.getElementById("bot-link");
     const status = document.getElementById("status");
     const qr = document.getElementById("qr");
