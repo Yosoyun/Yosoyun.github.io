@@ -342,14 +342,152 @@
       color: #3b4653;
       line-height: 1.45;
     }
+    .ops-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(320px, .75fr);
+      gap: 16px;
+      align-items: stretch;
+      border: 1px solid #211711;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(255, 253, 248, .98), rgba(245, 246, 240, .95)),
+        radial-gradient(circle at 18% 18%, rgba(36, 102, 81, .16), transparent 32%);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .ops-copy {
+      padding: 18px 20px;
+      display: grid;
+      align-content: center;
+      gap: 12px;
+    }
+    .ops-kicker {
+      color: #7b1f2d;
+      font-size: 12px;
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+    .ops-title {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(28px, 4vw, 46px);
+      line-height: 1.02;
+    }
+    .ops-summary {
+      max-width: 840px;
+      color: #3b4653;
+      line-height: 1.5;
+      margin: 0;
+    }
+    .ops-pipeline {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .pipeline-step {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .92);
+      padding: 9px;
+      min-height: 74px;
+    }
+    .pipeline-step span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .pipeline-step strong {
+      display: block;
+      margin-top: 6px;
+      font-size: 13px;
+      line-height: 1.2;
+    }
+    .ops-board {
+      padding: 16px;
+      background:
+        linear-gradient(90deg, rgba(123, 31, 45, .08) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(36, 102, 81, .08) 1px, transparent 1px),
+        #fffdf8;
+      background-size: 28px 28px;
+      border-left: 1px solid var(--line);
+      display: grid;
+      gap: 10px;
+      align-content: center;
+    }
+    .provider-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .95);
+      padding: 10px 12px;
+      font-weight: 850;
+    }
+    .provider-row small { display: block; color: var(--muted); font-weight: 700; margin-top: 2px; }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+      background: #e8f5ee;
+      color: #1f5b40;
+      white-space: nowrap;
+    }
+    .chip.warn { background: #fff0d2; color: #7b4b00; }
+    .chip.dark { background: #241b14; color: #fffdf8; }
+    .mode-card {
+      border: 1px solid #b7d3c6;
+      border-radius: 8px;
+      background: #f3faf6;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+    }
+    .mode-card h3 {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 18px;
+    }
+    .mode-card p { margin: 0; color: #3b4653; line-height: 1.45; font-size: 13px; }
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+    }
+    .quality-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, .55fr);
+      gap: 16px;
+      align-items: start;
+    }
+    .decision-table td:first-child { font-weight: 850; }
+    .source-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
     @media (max-width: 1180px) {
-      .grader-layout, .record-grid, .report-layout { grid-template-columns: 1fr; }
+      .grader-layout, .record-grid, .report-layout, .ops-hero, .quality-grid { grid-template-columns: 1fr; }
+      .ops-board { border-left: 0; border-top: 1px solid var(--line); }
+      .ops-pipeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 780px) {
       .topbar { position: static; align-items: flex-start; flex-direction: column; }
       .top-actions, .tabs { justify-content: flex-start; }
       .workspace { padding: 14px; }
       .metrics, .two-col, .field-row, .guide-grid { grid-template-columns: 1fr; }
+      .ops-pipeline { grid-template-columns: 1fr; }
       .score { font-size: 34px; }
     }
     @media print {
@@ -372,6 +510,7 @@
       </div>
       <nav class="tabs" aria-label="Workspace tabs">
         <button class="tab active" data-tab="grade">Grade Copies</button>
+        <button class="tab" data-tab="quality">Quality OCR</button>
         <button class="tab" data-tab="guide">How To Use</button>
         <button class="tab" data-tab="records">Class Records</button>
         <button class="tab" data-tab="report">Project Report</button>
@@ -387,6 +526,35 @@
     </header>
 
     <main class="workspace">
+      <section class="ops-hero" aria-label="Grading workflow">
+        <div class="ops-copy">
+          <div class="ops-kicker">Teacher review first · AI assisted grading</div>
+          <h1 class="ops-title">Handwritten maths grading, built for real copy checking.</h1>
+          <p class="ops-summary">Use the free browser mode for demos and typed answers. For real student handwriting, connect the Quality OCR backend so Mathpix handles maths transcription and OpenAI applies the rubric with confidence flags.</p>
+          <div class="ops-pipeline" aria-label="Workflow steps">
+            <div class="pipeline-step"><span>01</span><strong>Save paper and key once</strong></div>
+            <div class="pipeline-step"><span>02</span><strong>Upload student copy</strong></div>
+            <div class="pipeline-step"><span>03</span><strong>Extract question answers</strong></div>
+            <div class="pipeline-step"><span>04</span><strong>Grade with evidence</strong></div>
+            <div class="pipeline-step"><span>05</span><strong>Teacher approves export</strong></div>
+          </div>
+        </div>
+        <div class="ops-board">
+          <div class="provider-row">
+            <div>Free browser OCR<small>Tesseract.js, useful for testing</small></div>
+            <span class="chip warn">Limited</span>
+          </div>
+          <div class="provider-row">
+            <div>Quality OCR backend<small>Mathpix + OpenAI, recommended</small></div>
+            <span class="chip dark" id="qualityModeChip">Setup</span>
+          </div>
+          <div class="provider-row">
+            <div>Teacher review<small>Required for low confidence work</small></div>
+            <span class="chip">Required</span>
+          </div>
+        </div>
+      </section>
+
       <section class="metrics" aria-label="Class metrics">
         <div class="metric blue"><span>Students Saved</span><strong id="metricStudents">0</strong></div>
         <div class="metric green"><span>Current Score</span><strong id="metricScore">0/0</strong></div>
@@ -450,6 +618,21 @@
               <label>Answers JSON<textarea id="answersText" class="medium" spellcheck="false"></textarea></label>
               <label>Attach Scanned Copy<input type="file" id="scanFiles" multiple accept=".pdf,image/*"></label>
               <div class="file-list" id="scanFileList"></div>
+              <div class="mode-card">
+                <h3>OCR Mode</h3>
+                <p>For real handwritten maths, use a backend so API keys stay private and Mathpix/OpenAI can process the copy.</p>
+                <div class="field-row">
+                  <label>Mode<select id="ocrMode">
+                    <option value="browser">Free browser OCR</option>
+                    <option value="quality">Quality backend OCR</option>
+                  </select></label>
+                  <label>Backend URL<input type="text" id="qualityBackendUrl" placeholder="https://your-backend.example.com"></label>
+                </div>
+                <div class="panel-actions">
+                  <button class="btn small" id="testBackendBtn">Test Backend</button>
+                </div>
+                <div class="extract-status" id="qualityStatus">Quality backend is optional. Browser mode does not send files to a server.</div>
+              </div>
               <div class="extract-status" id="scanStatus">Use JSON for best accuracy. For screenshots, images, and scanned PDFs, click Read Copy and review the extracted text before grading.</div>
             </div>
           </section>
@@ -465,6 +648,49 @@
           </div>
           <div class="panel-body" id="resultArea"><div class="empty">No result yet.</div></div>
         </section>
+      </section>
+
+      <section class="view" id="view-quality">
+        <div class="quality-grid">
+          <article class="article">
+            <div class="guide-kicker">Recommended production path</div>
+            <h1>Quality OCR Integration</h1>
+            <p>The best practical setup is Mathpix for handwritten STEM OCR, then OpenAI vision/reasoning for rubric grading and deduction reasons. Browser OCR remains available only as a free fallback.</p>
+            <h2>Decision Matrix</h2>
+            <table class="decision-table">
+              <thead><tr><th>Need</th><th>Best Choice</th><th>Why</th></tr></thead>
+              <tbody>
+                <tr><td>Handwritten maths OCR</td><td>Mathpix</td><td>Specialized for STEM notation, equations, fractions, and handwriting.</td></tr>
+                <tr><td>Rubric reasoning</td><td>OpenAI vision model</td><td>Can compare answer image, transcript, and marking scheme with structured feedback.</td></tr>
+                <tr><td>Free fallback</td><td>Tesseract.js</td><td>Good for testing and simple text, weak for handwritten maths.</td></tr>
+                <tr><td>Final safety</td><td>Teacher review</td><td>Any low confidence, diagram, unusual method, or OCR uncertainty must be approved.</td></tr>
+              </tbody>
+            </table>
+            <h2>Implementation Order</h2>
+            <div class="support-list">
+              <div><strong>Step 1:</strong> Deploy the backend in `student-copy-grader/backend` with `MATHPIX_APP_ID`, `MATHPIX_APP_KEY`, and `OPENAI_API_KEY`.</div>
+              <div><strong>Step 2:</strong> Paste the backend URL in OCR Mode and choose Quality backend OCR.</div>
+              <div><strong>Step 3:</strong> Upload a 10-copy pilot batch and compare against teacher marks before using it for routine checking.</div>
+              <div><strong>Step 4:</strong> Keep the teacher approval screen as the final authority. AI should assist, not silently finalize.</div>
+            </div>
+          </article>
+          <aside class="article">
+            <h2>Backend Contract</h2>
+            <p>The frontend calls this endpoint when Quality backend OCR is selected:</p>
+            <pre>POST /api/ocr/extract
+files[]: image or PDF
+paper_text: saved paper
+rubric_text: saved rubric</pre>
+            <p>Expected JSON response:</p>
+            <pre>{
+  "answers": { "1": "...", "2": "..." },
+  "transcript": "...",
+  "provider": "mathpix",
+  "warnings": []
+}</pre>
+            <p class="source-note">Use backend-only keys. Do not place Mathpix or OpenAI keys in the GitHub Pages frontend.</p>
+          </aside>
+        </div>
       </section>
 
       <section class="view" id="view-guide">
@@ -719,6 +945,8 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       paperFiles: [],
       scanFiles: [],
       examSetup: null,
+      ocrMode: "browser",
+      qualityBackendUrl: "",
       records: []
     };
     let state = loadState();
@@ -743,6 +971,10 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       metricScore: document.querySelector("#metricScore"),
       metricReview: document.querySelector("#metricReview"),
       metricAverage: document.querySelector("#metricAverage"),
+      ocrMode: document.querySelector("#ocrMode"),
+      qualityBackendUrl: document.querySelector("#qualityBackendUrl"),
+      qualityStatus: document.querySelector("#qualityStatus"),
+      qualityModeChip: document.querySelector("#qualityModeChip"),
       rubricFile: document.querySelector("#rubricFile"),
       answersFile: document.querySelector("#answersFile")
     };
@@ -770,6 +1002,9 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       el.studentId.value = state.studentId || "";
       el.studentName.value = state.studentName || "";
       el.answersText.value = state.answersText || "";
+      el.ocrMode.value = state.ocrMode || "browser";
+      el.qualityBackendUrl.value = state.qualityBackendUrl || "";
+      renderQualityMode();
     }
     function syncStateFromFields() {
       state.paperText = el.paperText.value;
@@ -778,6 +1013,9 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       state.studentId = el.studentId.value.trim();
       state.studentName = el.studentName.value.trim();
       state.answersText = el.answersText.value;
+      state.ocrMode = el.ocrMode.value || "browser";
+      state.qualityBackendUrl = el.qualityBackendUrl.value.trim();
+      renderQualityMode();
     }
     function persistState() {
       state.records = compactRecords(state.records || []);
@@ -1309,6 +1547,44 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       target.classList.remove("busy", "done", "error");
       if (kind) target.classList.add(kind);
     }
+    function renderQualityMode() {
+      const mode = el.ocrMode?.value || state.ocrMode || "browser";
+      const backendUrl = el.qualityBackendUrl?.value?.trim() || state.qualityBackendUrl || "";
+      if (el.qualityModeChip) {
+        el.qualityModeChip.textContent = mode === "quality" ? (backendUrl ? "Ready" : "Needs URL") : "Browser";
+        el.qualityModeChip.className = `chip ${mode === "quality" && backendUrl ? "" : "warn"}`;
+      }
+      if (!el.qualityStatus) return;
+      if (mode === "quality" && backendUrl) {
+        setStatus(el.qualityStatus, "Quality backend selected. Read Copy will send selected student files to the configured backend.", "done");
+      } else if (mode === "quality") {
+        setStatus(el.qualityStatus, "Quality backend selected, but backend URL is missing.", "error");
+      } else {
+        setStatus(el.qualityStatus, "Browser OCR selected. Good for demos; weak for handwritten maths.", "");
+      }
+    }
+    function backendUrl(path = "") {
+      const base = (el.qualityBackendUrl.value || "").trim().replace(/\/+$/, "");
+      return base ? `${base}${path}` : "";
+    }
+    async function testQualityBackend() {
+      syncStateFromFields();
+      const url = backendUrl("/health");
+      if (!url) {
+        setStatus(el.qualityStatus, "Enter a backend URL first.", "error");
+        return;
+      }
+      try {
+        setStatus(el.qualityStatus, "Testing backend connection...", "busy");
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) throw new Error(`Backend returned ${response.status}.`);
+        const payload = await response.json().catch(() => ({}));
+        const provider = payload.ocr_provider || payload.provider || "backend";
+        setStatus(el.qualityStatus, `Connected. OCR provider: ${provider}.`, "done");
+      } catch (error) {
+        setStatus(el.qualityStatus, `Backend test failed: ${error.message}`, "error");
+      }
+    }
     function fileExtension(file) {
       const name = String(file?.name || "").toLowerCase();
       const match = name.match(/\.([a-z0-9]+)$/);
@@ -1494,8 +1770,54 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       }
     }
     async function readScannedCopyFiles() {
+      syncStateFromFields();
+      if (state.ocrMode === "quality") {
+        const usedBackend = await readScannedCopyWithBackend();
+        if (usedBackend) return;
+      }
       const text = await extractFilesToTextarea(el.scanFiles, el.answersText, el.scanStatus, { ocrScannedPdf: true });
       if (text) applyStudentText(text);
+    }
+    async function readScannedCopyWithBackend() {
+      const files = Array.from(el.scanFiles.files || []);
+      const url = backendUrl("/api/ocr/extract");
+      if (!files.length) {
+        setStatus(el.scanStatus, "Choose a student copy file first.", "error");
+        return true;
+      }
+      if (!url) {
+        setStatus(el.qualityStatus, "Quality backend URL is missing. Switch to browser OCR or enter the backend URL.", "error");
+        setStatus(el.scanStatus, "Quality backend URL is missing.", "error");
+        return true;
+      }
+      try {
+        const formData = new FormData();
+        files.forEach(file => formData.append("files", file));
+        formData.append("paper_text", el.paperText.value || "");
+        formData.append("rubric_text", el.rubricText.value || el.solutionText.value || "");
+        formData.append("student_id", el.studentId.value || "");
+        setStatus(el.scanStatus, `Quality OCR reading ${files.length} file${files.length === 1 ? "" : "s"}...`, "busy");
+        const response = await fetch(url, { method: "POST", body: formData });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.detail || payload.error || `Backend returned ${response.status}.`);
+        if (payload.answers && typeof payload.answers === "object") {
+          el.answersText.value = JSON.stringify(payload.answers, null, 2);
+        } else if (payload.transcript) {
+          applyStudentText(payload.transcript);
+        } else {
+          throw new Error("Backend did not return answers or transcript.");
+        }
+        syncStateFromFields();
+        saveState();
+        const warningText = Array.isArray(payload.warnings) && payload.warnings.length ? ` Warnings: ${payload.warnings.join("; ")}` : "";
+        setStatus(el.scanStatus, `Quality OCR complete via ${payload.provider || "backend"}.${warningText}`, "done");
+        setStatus(el.qualityStatus, "Quality backend used for the latest student copy.", "done");
+        return true;
+      } catch (error) {
+        setStatus(el.scanStatus, `Quality OCR failed: ${error.message}`, "error");
+        setStatus(el.qualityStatus, "Quality backend failed. Fix backend settings or switch to browser OCR.", "error");
+        return true;
+      }
     }
     function applyStudentText(text, file = null) {
       const trimmed = String(text || "").trim();
@@ -1851,6 +2173,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     document.querySelector("#draftRubricBtn").addEventListener("click", draftRubricFromSolution);
     document.querySelector("#answersUploadBtn").addEventListener("click", () => el.answersFile.click());
     document.querySelector("#clearStudentBtn").addEventListener("click", clearStudentWorkspace);
+    document.querySelector("#testBackendBtn").addEventListener("click", testQualityBackend);
     document.querySelector("#paperExtractBtn").addEventListener("click", () => extractFilesToTextarea(el.paperFiles, el.paperText, el.paperStatus, { ocrScannedPdf: true }));
     document.querySelector("#scanExtractBtn").addEventListener("click", readScannedCopyFiles);
     document.querySelector("#downloadHtmlBtn").addEventListener("click", () => downloadCurrentHtml().catch(showActionError));
@@ -1876,7 +2199,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       if (reportButton) downloadCurrentHtml(Number(reportButton.dataset.reportRecord)).catch(showActionError);
     });
     ["input", "change"].forEach(eventName => {
-      [el.paperText, el.solutionText, el.rubricText, el.answersText, el.studentId, el.studentName].forEach(input => {
+      [el.paperText, el.solutionText, el.rubricText, el.answersText, el.studentId, el.studentName, el.ocrMode, el.qualityBackendUrl].forEach(input => {
         input.addEventListener(eventName, () => syncStateFromFields());
       });
     });

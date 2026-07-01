@@ -22,6 +22,22 @@ It should not silently finalize marks when handwriting, equations, diagrams, or 
 
 Teachers commonly grade batches of 40, 80, or 200+ copies. Manual checking is slow, tiring, and inconsistent. Commercial AI grading products exist, but most are closed, paid, cloud-based, or institution-priced. The open-source world has strong parts - OCR, handwritten text recognition, math OCR, semantic similarity, local LLMs - but not a complete free CBSE-focused workflow.
 
+## Recommended Production Architecture
+
+For real handwritten Class XII maths copies, use the quality backend:
+
+- OCR: Mathpix for handwritten STEM/math notation.
+- Grading: OpenAI vision/reasoning or structured rubric checks with teacher review.
+- Security: API keys live only in the backend, never in the GitHub Pages frontend.
+- Review: teacher approval remains mandatory before marks are final.
+
+The public browser app now has two lanes:
+
+- Free browser OCR: useful for demos, typed text, and rough testing.
+- Quality backend OCR: recommended for handwritten maths and batch copy checking.
+
+Backend starter files are in `backend/`.
+
 ## Free And Local Architecture
 
 Recommended stack:
@@ -75,6 +91,7 @@ brew install tesseract
 - `docs/rubric-format.md` - marking scheme JSON format
 - `docs/evaluation-plan.md` - pilot protocol and accuracy metrics
 - `index.html` - public browser app for GitHub Pages
+- `backend/` - optional FastAPI backend for Mathpix/OpenAI quality OCR
 - `src/copygrader/grading.py` - first scoring engine
 - `src/copygrader/ocr.py` - local OCR adapter skeleton
 - `app.py` - local Streamlit teacher-review prototype
