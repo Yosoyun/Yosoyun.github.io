@@ -378,6 +378,9 @@
       </nav>
       <div class="top-actions">
         <button class="btn" id="sampleBtn">Load Demo</button>
+        <button class="btn" id="saveSetupBtn">Save Setup</button>
+        <button class="btn" id="loadSetupBtn">Load Setup</button>
+        <button class="btn" id="newStudentBtn">New Student</button>
         <button class="btn" id="saveBtn">Save</button>
         <button class="btn primary" id="gradeBtn">Grade</button>
       </div>
@@ -434,6 +437,7 @@
               <div class="panel-actions">
                 <button class="btn small" id="answersUploadBtn">Import</button>
                 <button class="btn small" id="scanExtractBtn">Read Copy</button>
+                <button class="btn small" id="clearStudentBtn">Clear Student</button>
                 <button class="btn small green" id="saveStudentBtn">Save Student</button>
               </div>
             </div>
@@ -474,10 +478,11 @@
               <div class="guide-card"><strong>Try Demo</strong><p>Click Load Demo, then Grade. It loads a Class XII Mathematics paper, solution key, rubric, and a student answer written in a different style.</p></div>
               <div class="guide-card"><strong>1. Load Paper</strong><p>Paste the question paper text or attach a TXT, Markdown, CSV, JSON, PDF, screenshot, or scanned image. Click Read File to extract text.</p></div>
               <div class="guide-card"><strong>2. Load Key</strong><p>Import a rubric JSON for best results, or upload/paste a plain solution key. Click Draft Rubric to create an editable first marking scheme.</p></div>
-              <div class="guide-card"><strong>3. Add Student</strong><p>Enter student ID and name. Upload answer JSON, text, PDF, screenshot, or scanned copy. Click Read Copy for OCR when needed.</p></div>
-              <div class="guide-card"><strong>4. Review OCR</strong><p>OCR is helpful, not final. Check the extracted answers, especially handwriting, formulas, diagrams, and crossed-out work.</p></div>
-              <div class="guide-card"><strong>5. Grade</strong><p>Click Grade. The app gives marks, confidence, and feedback. Any unclear or partial answer is marked for teacher review.</p></div>
-              <div class="guide-card"><strong>6. Save & Export</strong><p>Save the student result, export class CSV, download JSON backup, or download an HTML report for sharing.</p></div>
+              <div class="guide-card"><strong>3. Save Setup</strong><p>After the paper and key are ready, click Save Setup. For the next student, click New Student and upload only that student's copy.</p></div>
+              <div class="guide-card"><strong>4. Add Student</strong><p>Enter student ID and name. Upload answer JSON, text, PDF, screenshot, or scanned copy. Click Read Copy for OCR when needed.</p></div>
+              <div class="guide-card"><strong>5. Review OCR</strong><p>OCR is helpful, not final. Check the extracted answers, especially handwriting, formulas, diagrams, and crossed-out work.</p></div>
+              <div class="guide-card"><strong>6. Grade</strong><p>Click Grade. The app gives marks, confidence, and feedback. Any unclear or partial answer is marked for teacher review.</p></div>
+              <div class="guide-card"><strong>7. Save & Export</strong><p>Save the student result, export class CSV, download JSON backup, or download an HTML report for sharing.</p></div>
             </div>
 
             <h2>How Grading Works</h2>
@@ -486,6 +491,7 @@
               <div><strong>Numeric:</strong> The app checks every number written in the answer, so working like `1×4 - 2×3 = -2` can still match `-2`.</div>
               <div><strong>Step marking:</strong> A rubric can split marks into value-points, such as substitution, integration, final answer, point, slope, and tangent equation.</div>
               <div><strong>Different wording:</strong> Each value-point can use accepted phrases, keywords, and a reference-answer similarity check. This catches many alternate student explanations.</div>
+              <div><strong>Your JSON:</strong> The app now accepts `qno`, `keywords`, `alternateAnswers`, `correct_option`, `final_answer`, and `subparts`, then converts them into the internal rubric automatically.</div>
               <div><strong>Teacher review:</strong> Partial marks, low confidence, OCR uncertainty, formulas, and unusual methods should be reviewed before final marks are saved.</div>
             </div>
 
@@ -712,6 +718,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       answersText: JSON.stringify(sampleAnswers, null, 2),
       paperFiles: [],
       scanFiles: [],
+      examSetup: null,
       records: []
     };
     let state = loadState();
@@ -742,14 +749,16 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        return raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState };
+        const loaded = raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState };
+        loaded.records = compactRecords(loaded.records || []);
+        return loaded;
       } catch {
         return { ...defaultState };
       }
     }
     function saveState() {
       syncStateFromFields();
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      persistState();
       renderMetrics();
       renderFileLists();
       renderRecords();
@@ -770,8 +779,198 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       state.studentName = el.studentName.value.trim();
       state.answersText = el.answersText.value;
     }
+    function persistState() {
+      state.records = compactRecords(state.records || []);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        return true;
+      } catch (error) {
+        const trimmedState = {
+          ...state,
+          paperFiles: [],
+          scanFiles: [],
+          records: compactRecords(state.records || []).slice(-250)
+        };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmedState));
+          state = trimmedState;
+          setStatus(el.scanStatus, "Browser storage was almost full, so old file metadata was compacted. Student marks are still saved.", "done");
+          return true;
+        } catch {
+          setStatus(el.scanStatus, "Browser storage is full. Export records as JSON/CSV, then clear old records before saving more students.", "error");
+          return false;
+        }
+      }
+    }
+    function compactRecords(records) {
+      return (records || []).filter(Boolean).map(record => ({
+        id: record.id || record.result?.student?.id || `student-${Date.now()}`,
+        name: record.name || record.result?.student?.name || "",
+        savedAt: record.savedAt || new Date().toISOString(),
+        examTitle: record.examTitle || record.rubric?.exam?.title || "Grading Report",
+        answers: record.answers || {},
+        result: record.result,
+        scanFiles: record.scanFiles || []
+      })).filter(record => record.result);
+    }
+    function parseLooseJson(text) {
+      const raw = String(text || "").trim();
+      if (!raw) return {};
+      try {
+        return JSON.parse(raw);
+      } catch {
+        const firstObject = raw.indexOf("{");
+        const lastObject = raw.lastIndexOf("}");
+        const firstArray = raw.indexOf("[");
+        const lastArray = raw.lastIndexOf("]");
+        if (firstObject >= 0 && lastObject > firstObject) return JSON.parse(raw.slice(firstObject, lastObject + 1));
+        if (firstArray >= 0 && lastArray > firstArray) return JSON.parse(raw.slice(firstArray, lastArray + 1));
+        throw new Error("This is not valid JSON. Paste JSON, or paste plain answers like Q1: ... Q2: ...");
+      }
+    }
+    function normalizeRubric(source) {
+      const raw = source || {};
+      if (!Array.isArray(raw.questions)) throw new Error("Rubric must contain a questions array.");
+      const metadata = raw.metadata || raw.exam || {};
+      const questions = raw.questions.map(normalizeRubricQuestion).filter(Boolean);
+      const total = questions.reduce((sum, question) => sum + Number(question.marks || 0), 0);
+      return {
+        exam: {
+          title: metadata.paper || metadata.title || raw.title || "Student Copy Grader Exam",
+          board: metadata.board || raw.board || "CBSE",
+          class_level: metadata.class || metadata.class_level || metadata.classLevel || "",
+          subject: metadata.subject || raw.subject || "",
+          max_marks: Number(metadata.total_marks || metadata.max_marks || raw.total_marks || raw.max_marks || total)
+        },
+        questions
+      };
+    }
+    function normalizeRubricQuestion(question) {
+      const id = String(question.id ?? question.qno ?? question.question_no ?? question.questionNo ?? question.no ?? "").trim();
+      if (!id) return null;
+      const subparts = Array.isArray(question.subparts) ? question.subparts : [];
+      const marks = Number(question.marks ?? question.mark ?? question.points ?? sumSubpartMarks(subparts) ?? 1);
+      if (Array.isArray(question.rubric)) {
+        return {
+          ...question,
+          id,
+          marks,
+          type: question.type || "short_answer",
+          answer: stringifyAnswer(question.answer ?? question.final_answer ?? question.finalAnswer ?? "")
+        };
+      }
+      if (subparts.length) {
+        const itemMarks = marks || sumSubpartMarks(subparts) || subparts.length;
+        return {
+          id,
+          marks: itemMarks,
+          type: "short_answer",
+          answer: subparts.map(part => `${part.part || ""}: ${normalizeList(part.keywords).join(", ")}`).join("; "),
+          rubric: subparts.map((part, index) => {
+            const keywords = normalizeList(part.keywords);
+            const accepted = normalizeList(part.alternateAnswers || part.alternate_answers || part.accepted || part.acceptedAnswers);
+            return {
+              id: `part_${part.part || index + 1}`,
+              marks: Number(part.marks || itemMarks / subparts.length || 1),
+              description: `Q${id} part ${part.part || index + 1}`,
+              keywords,
+              accepted: [...accepted, ...keywords],
+              min_keywords: Number(part.min_keywords || part.minKeywords || 1)
+            };
+          })
+        };
+      }
+      const type = String(question.type || "").toLowerCase();
+      const keywords = normalizeList(question.keywords);
+      const alternates = normalizeList(question.alternateAnswers || question.alternate_answers || question.accepted || question.acceptedAnswers);
+      const finalAnswer = stringifyAnswer(question.final_answer ?? question.finalAnswer ?? question.answer);
+      const solution = stringifyAnswer(question.solution);
+      const correctOption = question.correct_option ?? question.correctOption ?? question.option ?? null;
+      if (correctOption !== null && correctOption !== undefined && correctOption !== "") {
+        const optionText = optionValue(question.options, correctOption);
+        return {
+          id,
+          marks,
+          type: "mcq",
+          answer: String(correctOption),
+          accepted: [finalAnswer, optionText, ...alternates, ...keywords].filter(Boolean)
+        };
+      }
+      if (type === "mcq" && finalAnswer && /^[a-d1-9]$/i.test(normalizeText(finalAnswer))) {
+        return { id, marks, type: "mcq", answer: normalizeText(finalAnswer), accepted: [...alternates, ...keywords].filter(Boolean) };
+      }
+      if (keywords.length || alternates.length) {
+        return {
+          id,
+          marks,
+          type: "short_answer",
+          answer: [finalAnswer, ...alternates, ...keywords].filter(Boolean).join("; "),
+          rubric: [{
+            id: "expected_answer",
+            marks,
+            description: `Matches expected answer for Q${id}`,
+            keywords,
+            accepted: [finalAnswer, ...alternates, ...keywords].filter(Boolean),
+            min_keywords: Number(question.min_keywords || question.minKeywords || (keywords.length ? 1 : 0)),
+            reference: solution || finalAnswer || keywords.join(" "),
+            similarity_threshold: marks > 1 ? 0.35 : 0
+          }]
+        };
+      }
+      const answerText = solution || finalAnswer || stringifyAnswer(question.question);
+      const inferred = inferQuestionType(answerText);
+      if (inferred === "numeric") return { id, marks, type: "numeric", answer: String(firstNumber(answerText)), tolerance: Number(question.tolerance || 0) };
+      return {
+        id,
+        marks,
+        type: "short_answer",
+        answer: answerText,
+        rubric: [{
+          id: "main_value_point",
+          marks,
+          description: `Matches the main value point for Q${id}`,
+          keywords: pickKeywords(answerText),
+          min_keywords: marks > 1 ? 2 : 1,
+          reference: answerText,
+          similarity_threshold: marks > 1 ? 0.4 : 0.55
+        }]
+      };
+    }
+    function answersFromParsed(parsed) {
+      if (parsed && parsed.answers && typeof parsed.answers === "object" && !Array.isArray(parsed.answers)) return parsed.answers;
+      if (Array.isArray(parsed?.answers)) return Object.fromEntries(parsed.answers.map(answer => [String(answer.id ?? answer.qno ?? answer.question ?? ""), stringifyAnswer(answer.answer ?? answer.text ?? answer.response)]).filter(([key]) => key));
+      if (Array.isArray(parsed?.questions)) return Object.fromEntries(parsed.questions.map(answer => [String(answer.id ?? answer.qno ?? answer.question_no ?? ""), stringifyAnswer(answer.answer ?? answer.student_answer ?? answer.response ?? answer.solution ?? answer.final_answer)]).filter(([key, value]) => key && value));
+      if (parsed && typeof parsed === "object") {
+        const clone = { ...parsed };
+        delete clone.student;
+        delete clone.metadata;
+        return clone;
+      }
+      return {};
+    }
+    function normalizeList(value) {
+      if (Array.isArray(value)) return value.map(stringifyAnswer).filter(Boolean);
+      if (value && typeof value === "object") return Object.values(value).map(stringifyAnswer).filter(Boolean);
+      const text = stringifyAnswer(value);
+      return text ? [text] : [];
+    }
+    function stringifyAnswer(value) {
+      if (value === null || value === undefined) return "";
+      if (typeof value === "object") return Object.entries(value).map(([key, item]) => `${key}: ${stringifyAnswer(item)}`).join("; ");
+      return String(value).trim();
+    }
+    function sumSubpartMarks(subparts) {
+      if (!Array.isArray(subparts) || !subparts.length) return null;
+      return subparts.reduce((sum, part) => sum + Number(part.marks || 0), 0);
+    }
+    function optionValue(options, optionKey) {
+      if (!options || typeof options !== "object") return "";
+      return stringifyAnswer(options[String(optionKey)] ?? options[Number(optionKey)] ?? options[normalizeOption(optionKey)]);
+    }
     function parseRubric() {
-      const rubric = JSON.parse(el.rubricText.value);
+      const sourceText = el.rubricText.value.trim() || el.solutionText.value.trim();
+      if (!sourceText) throw new Error("Paste or import a solution key/rubric first.");
+      const rubric = normalizeRubric(parseLooseJson(sourceText));
       if (!rubric || !Array.isArray(rubric.questions) || rubric.questions.length === 0) throw new Error("Rubric must contain a non-empty questions array.");
       rubric.questions.forEach(question => {
         if (!question.id) throw new Error("Every question needs an id.");
@@ -780,17 +979,25 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       return rubric;
     }
     function parseAnswers() {
-      const parsed = JSON.parse(el.answersText.value || "{}");
-      if (parsed.answers && typeof parsed.answers === "object") return parsed.answers;
-      return parsed;
+      const raw = el.answersText.value.trim();
+      if (!raw) return {};
+      try {
+        return answersFromParsed(parseLooseJson(raw));
+      } catch {
+        const entries = parseQuestionEntries(raw);
+        if (entries.length) return Object.fromEntries(entries.map(item => [item.id, item.text]));
+        return { "1": raw };
+      }
     }
     function validateRubric() {
       try {
         const rubric = parseRubric();
+        el.rubricText.value = JSON.stringify(rubric, null, 2);
+        syncStateFromFields();
         const total = rubric.questions.reduce((sum, question) => sum + Number(question.marks || 0), 0);
-        el.rubricStatus.textContent = `${rubric.questions.length} questions, ${formatNumber(total)} marks.`;
+        setStatus(el.rubricStatus, `${rubric.questions.length} questions, ${formatNumber(total)} marks. Setup format accepted.`, "done");
       } catch (error) {
-        el.rubricStatus.textContent = error.message;
+        setStatus(el.rubricStatus, error.message, "error");
       }
     }
     function gradeCurrentStudent() {
@@ -816,8 +1023,14 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     function gradeMcq(question, answer) {
       const expected = String(question.answer || "");
       const expectedOption = normalizeOption(expected);
-      const actualOption = normalizeOption(answer);
-      const matched = actualOption === expectedOption;
+      const actualOption = normalizeOption(answer, expectedOption);
+      const accepted = Array.isArray(question.accepted) ? question.accepted : [];
+      const normalizedAnswer = normalizeText(answer);
+      const acceptedMatch = accepted.some(value => {
+        const normalized = normalizeText(value);
+        return normalized && normalizedAnswer.includes(normalized);
+      });
+      const matched = actualOption === expectedOption || acceptedMatch;
       const awarded = matched ? Number(question.marks || 0) : 0;
       return {
         questionId: String(question.id),
@@ -826,8 +1039,8 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
         answer,
         feedback: matched ? ["Correct option selected."] : [`Expected option ${expectedOption || expected}.`],
         needsReview: !matched,
-        confidence: matched ? .98 : .65,
-        itemResults: [{ itemId: "mcq_exact", matched, awarded, possible: Number(question.marks || 0), description: "Selected the correct option", evidence: answer }]
+        confidence: matched ? (actualOption === expectedOption ? .98 : .9) : .65,
+        itemResults: [{ itemId: "mcq_exact", matched, awarded, possible: Number(question.marks || 0), description: "Selected the correct option or equivalent answer", evidence: answer }]
       };
     }
     function gradeNumeric(question, answer) {
@@ -905,25 +1118,42 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     }
     function normalizeText(value) {
       const normalizedMath = String(value || "")
+        .replace(/[①➀⓵]/g, " 1 ")
+        .replace(/[②➁⓶]/g, " 2 ")
+        .replace(/[③➂⓷]/g, " 3 ")
+        .replace(/[④➃⓸]/g, " 4 ")
+        .replace(/[⑤➄⓹]/g, " 5 ")
+        .replace(/[⑥➅⓺]/g, " 6 ")
+        .replace(/[⑦➆⓻]/g, " 7 ")
+        .replace(/[⑧➇⓼]/g, " 8 ")
+        .replace(/[⑨➈⓽]/g, " 9 ")
+        .replace(/[πΠ]/g, "pi")
+        .replace(/[√]/g, "sqrt")
+        .replace(/[⁻−]/g, "-")
+        .replace(/[⁰]/g, "0")
+        .replace(/[¹]/g, "1")
+        .replace(/[²]/g, "2")
+        .replace(/[³]/g, "3")
+        .replace(/\^\s*-\s*1/g, "-1")
         .replace(/\b([a-z])\s*\^\s*2\b/gi, (_, variable) => `${variable}2`)
         .replace(/\b([a-z])\s*\^\s*3\b/gi, (_, variable) => `${variable}3`)
         .replace(/\b([a-z])\s+squared\b/gi, (_, variable) => `${variable}2`)
         .replace(/\b([a-z])\s+cubed\b/gi, (_, variable) => `${variable}3`)
-        .replace(/[²]/g, "2")
-        .replace(/[³]/g, "3")
         .replace(/[×]/g, "x")
-        .replace(/[−]/g, "-")
         .replace(/\bsquared\b/gi, "2")
         .replace(/\bcubed\b/gi, "3");
       return normalizedMath.toLowerCase().match(/[a-z0-9-]+/g)?.join(" ") || "";
     }
-    function normalizeOption(value) {
+    function normalizeOption(value, expected = "") {
       const words = normalizeText(value).split(" ").filter(Boolean);
-      for (let index = 0; index < words.length; index += 1) {
-        if (/^[a-d]$/.test(words[index])) return words[index];
-      }
       const optionCue = words.findIndex(word => ["option", "answer", "ans", "choose", "selected", "select"].includes(word));
-      if (optionCue >= 0 && /^[a-d]$/.test(words[optionCue + 1] || "")) return words[optionCue + 1];
+      if (optionCue >= 0 && /^[a-d1-9]$/.test(words[optionCue + 1] || "")) return words[optionCue + 1];
+      const digits = words.filter(word => /^[1-9]$/.test(word));
+      const letters = words.filter(word => /^[a-d]$/.test(word));
+      if (/^[1-9]$/.test(String(expected)) && digits.length) return digits[0];
+      if (/^[a-d]$/.test(String(expected)) && letters.length) return letters[0];
+      if (digits.length) return digits[0];
+      if (letters.length) return letters[0];
       return words[0] || "";
     }
     function firstNumber(value) {
@@ -982,8 +1212,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
         id: result.student.id,
         name: result.student.name,
         savedAt: new Date().toISOString(),
-        questionPaper: state.paperText,
-        rubric,
+        examTitle: rubric.exam?.title || state.examSetup?.title || "Grading Report",
         answers: parseAnswers(),
         result,
         scanFiles: state.scanFiles || []
@@ -991,9 +1220,10 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       const key = record.id || `student-${Date.now()}`;
       state.records = (state.records || []).filter(item => item.id !== key);
       state.records.push({ ...record, id: key });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      persistState();
       renderRecords();
       renderMetrics();
+      setStatus(el.scanStatus, `Saved ${result.student.name || result.student.id}. You can click New Student for the next copy.`, "done");
     }
     function renderRecords() {
       const records = state.records || [];
@@ -1194,10 +1424,11 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
         const text = await extractTextFromFile(file, el.rubricStatus, { ocrScannedPdf: true });
         const trimmed = text.trim();
         if (fileExtension(file) === "json") {
-          const data = JSON.parse(trimmed);
+          const data = parseLooseJson(trimmed);
           if (data.questions) {
-            el.rubricText.value = JSON.stringify(data, null, 2);
-            el.solutionText.value = "";
+            const rubric = normalizeRubric(data);
+            el.rubricText.value = JSON.stringify(rubric, null, 2);
+            el.solutionText.value = trimmed;
             validateRubric();
           } else if (data.answers) {
             el.solutionText.value = Object.entries(data.answers).map(([key, value]) => `Q${key}: ${value}`).join("\n");
@@ -1240,12 +1471,12 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       const trimmed = String(text || "").trim();
       if (!trimmed) return;
       if (file && fileExtension(file) === "json") {
-        const data = JSON.parse(trimmed);
+        const data = parseLooseJson(trimmed);
         if (data.student) {
           el.studentId.value = data.student.id || el.studentId.value;
           el.studentName.value = data.student.name || el.studentName.value;
         }
-        el.answersText.value = JSON.stringify(data.answers || data, null, 2);
+        el.answersText.value = JSON.stringify(answersFromParsed(data), null, 2);
       } else {
         const answers = parseQuestionEntries(trimmed);
         if (answers.length) {
@@ -1274,6 +1505,20 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     }
     function draftRubricFromSolution() {
       const keyText = el.solutionText.value.trim();
+      try {
+        const data = parseLooseJson(keyText);
+        if (Array.isArray(data.questions)) {
+          const rubric = normalizeRubric(data);
+          el.rubricText.value = JSON.stringify(rubric, null, 2);
+          validateRubric();
+          syncStateFromFields();
+          saveState();
+          setStatus(el.rubricStatus, `Converted ${rubric.questions.length} questions from JSON key.`, "done");
+          return;
+        }
+      } catch {
+        // Plain-text keys are handled below.
+      }
       const entries = parseQuestionEntries(keyText);
       if (!entries.length) {
         setStatus(el.rubricStatus, "Could not find Q1:, Q2:, etc. in the solution key text.", "error");
@@ -1352,18 +1597,66 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     function firstUsefulLine(text) {
       return String(text || "").split(/\n+/).map(line => line.trim()).find(line => line.length > 3) || "";
     }
+    function saveExamSetup() {
+      try {
+        const rubric = parseRubric();
+        el.rubricText.value = JSON.stringify(rubric, null, 2);
+        syncStateFromFields();
+        state.examSetup = {
+          title: rubric.exam?.title || firstUsefulLine(el.paperText.value) || "Saved Exam Setup",
+          savedAt: new Date().toISOString(),
+          paperText: state.paperText,
+          solutionText: state.solutionText,
+          rubricText: state.rubricText
+        };
+        persistState();
+        setStatus(el.rubricStatus, `Saved setup: ${state.examSetup.title}. Now use New Student for each copy.`, "done");
+      } catch (error) {
+        setStatus(el.rubricStatus, error.message, "error");
+      }
+    }
+    function loadExamSetup() {
+      const setup = state.examSetup;
+      if (!setup) {
+        setStatus(el.rubricStatus, "No saved setup yet. Load the paper and key, then click Save Setup.", "error");
+        return;
+      }
+      state.paperText = setup.paperText || "";
+      state.solutionText = setup.solutionText || "";
+      state.rubricText = setup.rubricText || "";
+      syncFieldsFromState();
+      validateRubric();
+      saveState();
+      setStatus(el.rubricStatus, `Loaded setup: ${setup.title || "Saved Exam Setup"}.`, "done");
+    }
+    function clearStudentWorkspace() {
+      const next = (state.records || []).length + 1;
+      el.studentId.value = `S${String(next).padStart(3, "0")}`;
+      el.studentName.value = "";
+      el.answersText.value = "";
+      el.scanFiles.value = "";
+      state.scanFiles = [];
+      currentResult = null;
+      el.resultArea.innerHTML = `<div class="empty">Student cleared. Upload or paste the next copy.</div>`;
+      syncStateFromFields();
+      saveState();
+      setStatus(el.scanStatus, "Ready for the next student copy. Paper and key are unchanged.", "done");
+    }
     function loadRecord(index) {
       const record = state.records[index];
       if (!record) return;
-      state.paperText = record.questionPaper || "";
-      state.rubricText = JSON.stringify(record.rubric, null, 2);
+      if (state.examSetup) {
+        state.paperText = state.examSetup.paperText || state.paperText || "";
+        state.solutionText = state.examSetup.solutionText || state.solutionText || "";
+        state.rubricText = state.examSetup.rubricText || state.rubricText || "";
+      }
       state.studentId = record.id || "";
       state.studentName = record.name || "";
       state.answersText = JSON.stringify(record.answers || {}, null, 2);
       state.scanFiles = record.scanFiles || [];
       syncFieldsFromState();
       currentResult = record.result;
-      renderResult(currentResult, record.rubric);
+      renderResult(currentResult, parseRubric());
       renderMetrics();
       setActiveTab("grade");
     }
@@ -1383,11 +1676,12 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     }
     function exportAllJson() {
       syncStateFromFields();
+      persistState();
       downloadText("student-copy-grader-records.json", JSON.stringify(state, null, 2), "application/json");
     }
     function downloadCurrentJson() {
       if (!currentResult) gradeCurrentStudent();
-      downloadText("student-grading-result.json", JSON.stringify(currentResult, null, 2), "application/json");
+      downloadText("student-grading-result.json", JSON.stringify({ result: currentResult, answers: parseAnswers() }, null, 2), "application/json");
     }
     function downloadCurrentHtml(recordIndex = null) {
       let result = currentResult;
@@ -1396,7 +1690,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
         const record = state.records[recordIndex];
         if (!record) return;
         result = record.result;
-        rubric = record.rubric;
+        rubric = { exam: { title: record.examTitle || state.examSetup?.title || "Grading Report" } };
       } else {
         const pack = gradeCurrentStudent();
         result = pack.result;
@@ -1474,7 +1768,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
     }
     function csvCell(value) {
       const text = String(value ?? "");
@@ -1503,6 +1797,9 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       tab.addEventListener("click", () => setActiveTab(tab.dataset.tab));
     });
     document.querySelector("#sampleBtn").addEventListener("click", loadSample);
+    document.querySelector("#saveSetupBtn").addEventListener("click", saveExamSetup);
+    document.querySelector("#loadSetupBtn").addEventListener("click", loadExamSetup);
+    document.querySelector("#newStudentBtn").addEventListener("click", clearStudentWorkspace);
     document.querySelector("#saveBtn").addEventListener("click", saveState);
     document.querySelector("#gradeBtn").addEventListener("click", () => {
       try {
@@ -1520,6 +1817,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     document.querySelector("#rubricReadBtn").addEventListener("click", readSolutionKeyFile);
     document.querySelector("#draftRubricBtn").addEventListener("click", draftRubricFromSolution);
     document.querySelector("#answersUploadBtn").addEventListener("click", () => el.answersFile.click());
+    document.querySelector("#clearStudentBtn").addEventListener("click", clearStudentWorkspace);
     document.querySelector("#paperExtractBtn").addEventListener("click", () => extractFilesToTextarea(el.paperFiles, el.paperText, el.paperStatus, { ocrScannedPdf: true }));
     document.querySelector("#scanExtractBtn").addEventListener("click", readScannedCopyFiles);
     document.querySelector("#downloadHtmlBtn").addEventListener("click", () => downloadCurrentHtml());
