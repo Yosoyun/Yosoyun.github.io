@@ -989,6 +989,33 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
         return { "1": raw };
       }
     }
+    function hasAnyAnswer(answers) {
+      return Object.values(answers || {}).some(value => {
+        const text = stringifyAnswer(value)
+          .replace(/^---.*---$/gm, "")
+          .replace(/\[No text detected\]/gi, "")
+          .trim();
+        return text.length > 0;
+      });
+    }
+    async function ensureStudentAnswersReady() {
+      syncStateFromFields();
+      let answers = parseAnswers();
+      if (hasAnyAnswer(answers)) return answers;
+      const scanFiles = Array.from(el.scanFiles.files || []);
+      if (scanFiles.length) {
+        setStatus(el.scanStatus, "No typed answers found, so I am reading the attached student copy first...", "busy");
+        await readScannedCopyFiles();
+        answers = parseAnswers();
+        if (hasAnyAnswer(answers)) return answers;
+      }
+      throw new Error("No student answers found. Upload a student copy and click Read Copy, or paste answers in the Answers box before grading/downloading.");
+    }
+    function showActionError(error) {
+      const message = error?.message || String(error);
+      el.resultArea.innerHTML = `<div class="notice">${escapeHtml(message)}</div>`;
+      setStatus(el.scanStatus, message, "error");
+    }
     function validateRubric() {
       try {
         const rubric = parseRubric();
@@ -1003,6 +1030,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     function gradeCurrentStudent() {
       const rubric = parseRubric();
       const answers = parseAnswers();
+      if (!hasAnyAnswer(answers)) throw new Error("No student answers found. Read or paste the student copy before grading.");
       currentResult = gradeSubmission(rubric, { student: { id: el.studentId.value.trim() || "unknown", name: el.studentName.value.trim() }, answers });
       renderResult(currentResult, rubric);
       renderMetrics();
@@ -1201,10 +1229,12 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
           <tbody>${rows}</tbody>
         </table>
       `;
-      document.querySelector("#saveResultInlineBtn").addEventListener("click", () => saveCurrentStudent(rubric, result));
+      document.querySelector("#saveResultInlineBtn").addEventListener("click", () => saveCurrentStudent(rubric, result).catch(showActionError));
     }
-    function saveCurrentStudent(rubricArg, resultArg) {
-      const pack = resultArg ? { rubric: rubricArg, result: resultArg } : gradeCurrentStudent();
+    async function saveCurrentStudent(rubricArg, resultArg) {
+      const canUseProvidedResult = resultArg && hasAnyAnswer(parseAnswers());
+      if (!canUseProvidedResult) await ensureStudentAnswersReady();
+      const pack = canUseProvidedResult ? { rubric: rubricArg, result: resultArg } : gradeCurrentStudent();
       const rubric = pack.rubric;
       const result = pack.result;
       syncStateFromFields();
@@ -1679,11 +1709,12 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       persistState();
       downloadText("student-copy-grader-records.json", JSON.stringify(state, null, 2), "application/json");
     }
-    function downloadCurrentJson() {
-      if (!currentResult) gradeCurrentStudent();
+    async function downloadCurrentJson() {
+      await ensureStudentAnswersReady();
+      gradeCurrentStudent();
       downloadText("student-grading-result.json", JSON.stringify({ result: currentResult, answers: parseAnswers() }, null, 2), "application/json");
     }
-    function downloadCurrentHtml(recordIndex = null) {
+    async function downloadCurrentHtml(recordIndex = null) {
       let result = currentResult;
       let rubric;
       if (recordIndex !== null) {
@@ -1692,6 +1723,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
         result = record.result;
         rubric = { exam: { title: record.examTitle || state.examSetup?.title || "Grading Report" } };
       } else {
+        await ensureStudentAnswersReady();
         const pack = gradeCurrentStudent();
         result = pack.result;
         rubric = pack.rubric;
@@ -1801,16 +1833,17 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     document.querySelector("#loadSetupBtn").addEventListener("click", loadExamSetup);
     document.querySelector("#newStudentBtn").addEventListener("click", clearStudentWorkspace);
     document.querySelector("#saveBtn").addEventListener("click", saveState);
-    document.querySelector("#gradeBtn").addEventListener("click", () => {
+    document.querySelector("#gradeBtn").addEventListener("click", async () => {
       try {
+        await ensureStudentAnswersReady();
         const pack = gradeCurrentStudent();
         saveState();
         renderResult(pack.result, pack.rubric);
       } catch (error) {
-        el.resultArea.innerHTML = `<div class="notice">${escapeHtml(error.message)}</div>`;
+        showActionError(error);
       }
     });
-    document.querySelector("#saveStudentBtn").addEventListener("click", () => saveCurrentStudent());
+    document.querySelector("#saveStudentBtn").addEventListener("click", () => saveCurrentStudent().catch(showActionError));
     document.querySelector("#validateRubricBtn").addEventListener("click", validateRubric);
     document.querySelector("#clearPaperBtn").addEventListener("click", () => { el.paperText.value = ""; saveState(); });
     document.querySelector("#rubricUploadBtn").addEventListener("click", () => el.rubricFile.click());
@@ -1820,8 +1853,8 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
     document.querySelector("#clearStudentBtn").addEventListener("click", clearStudentWorkspace);
     document.querySelector("#paperExtractBtn").addEventListener("click", () => extractFilesToTextarea(el.paperFiles, el.paperText, el.paperStatus, { ocrScannedPdf: true }));
     document.querySelector("#scanExtractBtn").addEventListener("click", readScannedCopyFiles);
-    document.querySelector("#downloadHtmlBtn").addEventListener("click", () => downloadCurrentHtml());
-    document.querySelector("#downloadJsonBtn").addEventListener("click", downloadCurrentJson);
+    document.querySelector("#downloadHtmlBtn").addEventListener("click", () => downloadCurrentHtml().catch(showActionError));
+    document.querySelector("#downloadJsonBtn").addEventListener("click", () => downloadCurrentJson().catch(showActionError));
     document.querySelector("#exportCsvBtn").addEventListener("click", exportCsv);
     document.querySelector("#exportAllJsonBtn").addEventListener("click", exportAllJson);
     document.querySelector("#clearRecordsBtn").addEventListener("click", () => {
@@ -1840,7 +1873,7 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       const reportButton = event.target.closest("[data-report-record]");
       if (loadButton) loadRecord(Number(loadButton.dataset.loadRecord));
       if (deleteButton) deleteRecord(Number(deleteButton.dataset.deleteRecord));
-      if (reportButton) downloadCurrentHtml(Number(reportButton.dataset.reportRecord));
+      if (reportButton) downloadCurrentHtml(Number(reportButton.dataset.reportRecord)).catch(showActionError);
     });
     ["input", "change"].forEach(eventName => {
       [el.paperText, el.solutionText, el.rubricText, el.answersText, el.studentId, el.studentName].forEach(input => {
