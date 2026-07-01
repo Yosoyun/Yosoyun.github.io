@@ -37,8 +37,8 @@ def test_grades_demo_submission_full_marks():
         {
             "student": {"id": "S001"},
             "answers": {
-                "1": "option b",
-                "2": "12.2",
+                "1": "I choose option B.",
+                "2": "10 + 2.2 = 12.2",
                 "3": "White light splits into many colours using a prism.",
             },
         }
@@ -87,3 +87,19 @@ def test_short_answer_partial_marks_and_review_flag():
     assert question.needs_review is True
     assert "chlorophyll" in " ".join(question.feedback).lower()
 
+
+def test_numeric_match_checks_all_working_numbers():
+    rubric = parse_rubric(
+        {
+            "exam": {"title": "Demo"},
+            "questions": [
+                {"id": "1", "marks": 2, "type": "numeric", "answer": "-2", "tolerance": 0},
+            ],
+        }
+    )
+    submission = parse_submission({"student": {"id": "S001"}, "answers": {"1": "1×4 - 2×3 = 4 - 6 = -2"}})
+
+    result = grade_submission(rubric, submission)
+
+    assert result.awarded == 2
+    assert result.question_results[0].needs_review is False

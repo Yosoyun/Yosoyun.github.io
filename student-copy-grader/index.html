@@ -377,7 +377,7 @@
         <button class="tab" data-tab="report">Project Report</button>
       </nav>
       <div class="top-actions">
-        <button class="btn" id="sampleBtn">Load Sample</button>
+        <button class="btn" id="sampleBtn">Load Demo</button>
         <button class="btn" id="saveBtn">Save</button>
         <button class="btn primary" id="gradeBtn">Grade</button>
       </div>
@@ -471,12 +471,22 @@
             <p>This app helps teachers check answer copies faster. It reads question papers, solution keys, and student answers locally in the browser, then applies a marking rubric and shows question-wise marks with deduction reasons.</p>
 
             <div class="guide-grid">
+              <div class="guide-card"><strong>Try Demo</strong><p>Click Load Demo, then Grade. It loads a Class XII Mathematics paper, solution key, rubric, and a student answer written in a different style.</p></div>
               <div class="guide-card"><strong>1. Load Paper</strong><p>Paste the question paper text or attach a TXT, Markdown, CSV, JSON, PDF, screenshot, or scanned image. Click Read File to extract text.</p></div>
               <div class="guide-card"><strong>2. Load Key</strong><p>Import a rubric JSON for best results, or upload/paste a plain solution key. Click Draft Rubric to create an editable first marking scheme.</p></div>
               <div class="guide-card"><strong>3. Add Student</strong><p>Enter student ID and name. Upload answer JSON, text, PDF, screenshot, or scanned copy. Click Read Copy for OCR when needed.</p></div>
               <div class="guide-card"><strong>4. Review OCR</strong><p>OCR is helpful, not final. Check the extracted answers, especially handwriting, formulas, diagrams, and crossed-out work.</p></div>
               <div class="guide-card"><strong>5. Grade</strong><p>Click Grade. The app gives marks, confidence, and feedback. Any unclear or partial answer is marked for teacher review.</p></div>
               <div class="guide-card"><strong>6. Save & Export</strong><p>Save the student result, export class CSV, download JSON backup, or download an HTML report for sharing.</p></div>
+            </div>
+
+            <h2>How Grading Works</h2>
+            <div class="support-list">
+              <div><strong>MCQ:</strong> The selected option is normalized, so `B`, `Option B`, and `Answer: B` can match the same key.</div>
+              <div><strong>Numeric:</strong> The app checks every number written in the answer, so working like `1×4 - 2×3 = -2` can still match `-2`.</div>
+              <div><strong>Step marking:</strong> A rubric can split marks into value-points, such as substitution, integration, final answer, point, slope, and tangent equation.</div>
+              <div><strong>Different wording:</strong> Each value-point can use accepted phrases, keywords, and a reference-answer similarity check. This catches many alternate student explanations.</div>
+              <div><strong>Teacher review:</strong> Partial marks, low confidence, OCR uncertainty, formulas, and unusual methods should be reviewed before final marks are saved.</div>
             </div>
 
             <h2>Supported Files</h2>
@@ -591,31 +601,111 @@ Q3: 9.81 m/s^2</pre>
     const TESSERACT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.min.js";
     let pdfJsPromise = null;
     let tesseractPromise = null;
+    const class12DemoPaper = `Class XII Mathematics Demo - Differential Calculus and Applications
+
+Q1. Choose the correct option. The derivative of sin x is:
+A. sin x
+B. cos x
+C. -cos x
+D. -sin x
+
+Q2. Find the determinant of the matrix [[1, 2], [3, 4]].
+
+Q3. Evaluate the integral: ∫ 2x cos(x²) dx.
+
+Q4. Find the equation of the tangent to the curve y = x² at x = 1.`;
+    const class12DemoSolution = `Q1: B (1 mark)
+Q2: -2 (2 marks)
+Q3: Let u = x², so du = 2x dx. Then ∫ 2x cos(x²) dx = ∫ cos u du = sin u + C = sin(x²) + C. (3 marks)
+Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 2. Tangent: y - 1 = 2(x - 1), i.e. y = 2x - 1. (4 marks)`;
     const sampleRubric = {
-      exam: { title: "CBSE Class X Science Demo", board: "CBSE", class_level: "X", subject: "Science", max_marks: 5 },
+      exam: { title: "Class XII Mathematics Demo", board: "CBSE", class_level: "XII", subject: "Mathematics", max_marks: 10 },
       questions: [
-        { id: "1", marks: 1, type: "mcq", answer: "C" },
+        { id: "1", marks: 1, type: "mcq", answer: "B" },
+        { id: "2", marks: 2, type: "numeric", answer: "-2", tolerance: 0 },
         {
-          id: "2",
-          marks: 2,
+          id: "3",
+          marks: 3,
           type: "short_answer",
-          answer: "Dispersion occurs when white light splits into its constituent colours while passing through a prism due to different refraction of different wavelengths.",
+          answer: "Let u = x², so du = 2x dx. Then ∫ 2x cos(x²) dx = ∫ cos u du = sin u + C = sin(x²) + C.",
           rubric: [
-            { id: "splitting", marks: 1, description: "Explains that white light splits into colours", keywords: ["white light", "splits", "colours"], min_keywords: 2 },
-            { id: "cause", marks: 1, description: "Mentions prism, refraction, or wavelength as the cause", keywords: ["prism", "refraction", "wavelength"], min_keywords: 1 }
+            {
+              id: "substitution",
+              marks: 1,
+              description: "Uses substitution u = x² or equivalent",
+              keywords: ["u", "x2", "2x", "dx"],
+              accepted: ["u = x2", "u=x2", "t = x2", "t=x2", "let x2"],
+              min_keywords: 2
+            },
+            {
+              id: "integrates_cos",
+              marks: 1,
+              description: "Integrates cos u as sin u",
+              keywords: ["cos", "sin"],
+              accepted: ["integral cos", "∫ cos", "sin u", "sin t"],
+              min_keywords: 2
+            },
+            {
+              id: "final_constant",
+              marks: 1,
+              description: "Writes final answer sin(x²) + C",
+              accepted: ["sin x2 + c", "sin(x2)+c", "sin x squared + c", "sin t + c"],
+              keywords: ["sin", "c"],
+              min_keywords: 2
+            }
           ]
         },
-        { id: "3", marks: 2, type: "numeric", answer: "9.8", tolerance: 0.1 }
+        {
+          id: "4",
+          marks: 4,
+          type: "short_answer",
+          answer: "At x = 1, y = 1. dy/dx = 2x, so slope at x = 1 is 2. The tangent is y - 1 = 2(x - 1), or y = 2x - 1.",
+          rubric: [
+            {
+              id: "point",
+              marks: 1,
+              description: "Finds the point of contact (1,1)",
+              accepted: ["(1,1)", "point is 1 1", "x = 1 y = 1"],
+              keywords: ["1", "1"],
+              min_keywords: 2
+            },
+            {
+              id: "derivative",
+              marks: 1,
+              description: "Differentiates y = x² to get dy/dx = 2x",
+              accepted: ["dy/dx = 2x", "derivative is 2x", "gradient function 2x", "slope function 2x"],
+              keywords: ["2x"],
+              min_keywords: 1
+            },
+            {
+              id: "slope",
+              marks: 1,
+              description: "Finds slope at x = 1 as 2",
+              accepted: ["slope = 2", "gradient = 2", "m = 2"],
+              keywords: ["slope", "2"],
+              min_keywords: 1
+            },
+            {
+              id: "line",
+              marks: 1,
+              description: "Writes tangent equation y - 1 = 2(x - 1) or y = 2x - 1",
+              accepted: ["y - 1 = 2 x - 1", "y=2x-1", "y = 2x - 1", "y - 1 = 2(x - 1)"],
+              keywords: ["y", "2x", "1"],
+              min_keywords: 2
+            }
+          ]
+        }
       ]
     };
     const sampleAnswers = {
-      "1": "Option C",
-      "2": "White light splits into seven colours when it passes through a prism.",
-      "3": "9.81 m/s^2"
+      "1": "I choose option B.",
+      "2": "The determinant is 1×4 - 2×3 = 4 - 6 = -2.",
+      "3": "Take t = x squared. Then dt = 2x dx, so the integral becomes integral cos t dt. Therefore the answer is sin t + C, which means sin(x squared) + C.",
+      "4": "For y = x^2, at x=1 the point is (1,1). The gradient is 2x, hence m=2 at that point. So the tangent is y - 1 = 2(x - 1), or y = 2x - 1."
     };
     const defaultState = {
-      paperText: "Class X Science Demo\nQ1. Choose the correct option.\nQ2. What is dispersion of light?\nQ3. Write the value of acceleration due to gravity near Earth.",
-      solutionText: "Q1: C\nQ2: White light splits into colours through a prism.\nQ3: 9.8",
+      paperText: class12DemoPaper,
+      solutionText: class12DemoSolution,
       rubricText: JSON.stringify(sampleRubric, null, 2),
       studentId: "S001",
       studentName: "Demo Student",
@@ -725,14 +815,16 @@ Q3: 9.81 m/s^2</pre>
     }
     function gradeMcq(question, answer) {
       const expected = String(question.answer || "");
-      const matched = normalizeOption(answer) === normalizeOption(expected);
+      const expectedOption = normalizeOption(expected);
+      const actualOption = normalizeOption(answer);
+      const matched = actualOption === expectedOption;
       const awarded = matched ? Number(question.marks || 0) : 0;
       return {
         questionId: String(question.id),
         awarded,
         possible: Number(question.marks || 0),
         answer,
-        feedback: matched ? ["Correct option selected."] : [`Expected option ${expected}.`],
+        feedback: matched ? ["Correct option selected."] : [`Expected option ${expectedOption || expected}.`],
         needsReview: !matched,
         confidence: matched ? .98 : .65,
         itemResults: [{ itemId: "mcq_exact", matched, awarded, possible: Number(question.marks || 0), description: "Selected the correct option", evidence: answer }]
@@ -740,10 +832,13 @@ Q3: 9.81 m/s^2</pre>
     }
     function gradeNumeric(question, answer) {
       const expected = firstNumber(String(question.answer || ""));
-      const actual = firstNumber(answer);
+      const actualNumbers = allNumbers(answer);
       const tolerance = Number(question.tolerance || 0);
-      const matched = expected !== null && actual !== null && Math.abs(expected - actual) <= tolerance;
-      const evidence = actual === null ? "No numeric answer found." : `Found ${actual}, expected ${expected}, tolerance ${tolerance}.`;
+      const actual = expected === null ? null : actualNumbers.find(value => Math.abs(expected - value) <= tolerance);
+      const matched = expected !== null && actual !== undefined && actual !== null;
+      const evidence = !actualNumbers.length
+        ? "No numeric answer found."
+        : `Found numbers ${actualNumbers.join(", ")}; expected ${expected}, tolerance ${tolerance}.`;
       const awarded = matched ? Number(question.marks || 0) : 0;
       return {
         questionId: String(question.id),
@@ -809,16 +904,34 @@ Q3: 9.81 m/s^2</pre>
       };
     }
     function normalizeText(value) {
-      return String(value || "").toLowerCase().match(/[a-z0-9]+/g)?.join(" ") || "";
+      const normalizedMath = String(value || "")
+        .replace(/\b([a-z])\s*\^\s*2\b/gi, (_, variable) => `${variable}2`)
+        .replace(/\b([a-z])\s*\^\s*3\b/gi, (_, variable) => `${variable}3`)
+        .replace(/\b([a-z])\s+squared\b/gi, (_, variable) => `${variable}2`)
+        .replace(/\b([a-z])\s+cubed\b/gi, (_, variable) => `${variable}3`)
+        .replace(/[²]/g, "2")
+        .replace(/[³]/g, "3")
+        .replace(/[×]/g, "x")
+        .replace(/[−]/g, "-")
+        .replace(/\bsquared\b/gi, "2")
+        .replace(/\bcubed\b/gi, "3");
+      return normalizedMath.toLowerCase().match(/[a-z0-9-]+/g)?.join(" ") || "";
     }
     function normalizeOption(value) {
       const words = normalizeText(value).split(" ").filter(Boolean);
-      if (["option", "answer", "ans"].includes(words[0]) && words.length > 1) return words[1];
+      for (let index = 0; index < words.length; index += 1) {
+        if (/^[a-d]$/.test(words[index])) return words[index];
+      }
+      const optionCue = words.findIndex(word => ["option", "answer", "ans", "choose", "selected", "select"].includes(word));
+      if (optionCue >= 0 && /^[a-d]$/.test(words[optionCue + 1] || "")) return words[optionCue + 1];
       return words[0] || "";
     }
     function firstNumber(value) {
       const match = String(value || "").match(/[-+]?(?:\d+\.\d+|\d+|\.\d+)/);
       return match ? Number(match[0]) : null;
+    }
+    function allNumbers(value) {
+      return [...String(value || "").matchAll(/[-+]?(?:\d+\.\d+|\d+|\.\d+)/g)].map(match => Number(match[0]));
     }
     function similarity(left, right) {
       const a = normalizeText(left).split(" ").filter(Boolean);

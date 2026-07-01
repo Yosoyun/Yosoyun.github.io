@@ -7,7 +7,7 @@ from difflib import SequenceMatcher
 from .models import GradingResult, ItemResult, Question, QuestionResult, Rubric, RubricItem, Submission
 
 
-_WORD_RE = re.compile(r"[a-z0-9]+")
+_WORD_RE = re.compile(r"[a-z0-9-]+")
 _NUMBER_RE = re.compile(r"[-+]?(?:\d+\.\d+|\d+|\.\d+)")
 
 
@@ -34,9 +34,11 @@ def _grade_question(question: Question, answer: str) -> QuestionResult:
 
 def _grade_mcq(question: Question, answer: str) -> QuestionResult:
     expected = question.answer or ""
-    matched = _normalize_option(answer) == _normalize_option(expected)
+    expected_option = _normalize_option(expected)
+    actual_option = _normalize_option(answer)
+    matched = actual_option == expected_option
     awarded = question.marks if matched else 0.0
-    feedback = ("Correct option selected.",) if matched else (f"Expected option {expected}.",)
+    feedback = ("Correct option selected.",) if matched else (f"Expected option {expected_option or expected}.",)
     return QuestionResult(
         question_id=question.id,
         awarded=awarded,
@@ -60,14 +62,21 @@ def _grade_mcq(question: Question, answer: str) -> QuestionResult:
 
 def _grade_numeric(question: Question, answer: str) -> QuestionResult:
     expected_number = _first_number(question.answer or "")
-    actual_number = _first_number(answer)
+    actual_numbers = _all_numbers(answer)
     tolerance = question.tolerance if question.tolerance is not None else 0.0
 
-    matched = False
-    evidence = "No numeric answer found."
-    if expected_number is not None and actual_number is not None:
-        matched = math.isclose(actual_number, expected_number, abs_tol=tolerance)
-        evidence = f"found {actual_number}, expected {expected_number}, tolerance {tolerance}"
+    actual_number = (
+        next((value for value in actual_numbers if math.isclose(value, expected_number, abs_tol=tolerance)), None)
+        if expected_number is not None
+        else None
+    )
+    matched = expected_number is not None and actual_number is not None
+    if not actual_numbers:
+        evidence = "No numeric answer found."
+    elif expected_number is None:
+        evidence = "No numeric answer configured in the key."
+    else:
+        evidence = f"found numbers {', '.join(f'{value:g}' for value in actual_numbers)}, expected {expected_number:g}, tolerance {tolerance:g}"
 
     awarded = question.marks if matched else 0.0
     feedback = ("Numeric answer is within tolerance.",) if matched else (evidence,)
@@ -193,7 +202,19 @@ def _confidence_from_items(item_results: tuple[ItemResult, ...], awarded: float,
 
 
 def _normalize_text(text: str) -> str:
-    return " ".join(_WORD_RE.findall(text.lower()))
+    normalized_math = re.sub(r"\b([a-z])\s*\^\s*2\b", r"\g<1>2", text, flags=re.IGNORECASE)
+    normalized_math = re.sub(r"\b([a-z])\s*\^\s*3\b", r"\g<1>3", normalized_math, flags=re.IGNORECASE)
+    normalized_math = re.sub(r"\b([a-z])\s+squared\b", r"\g<1>2", normalized_math, flags=re.IGNORECASE)
+    normalized_math = re.sub(r"\b([a-z])\s+cubed\b", r"\g<1>3", normalized_math, flags=re.IGNORECASE)
+    normalized_math = (
+        normalized_math.replace("²", "2")
+        .replace("³", "3")
+        .replace("×", "x")
+        .replace("−", "-")
+    )
+    normalized_math = re.sub(r"\bsquared\b", "2", normalized_math, flags=re.IGNORECASE)
+    normalized_math = re.sub(r"\bcubed\b", "3", normalized_math, flags=re.IGNORECASE)
+    return " ".join(_WORD_RE.findall(normalized_math.lower()))
 
 
 def _normalize_option(text: str) -> str:
@@ -201,8 +222,13 @@ def _normalize_option(text: str) -> str:
     words = normalized.split()
     if not words:
         return ""
-    if words[0] == "option" and len(words) > 1:
-        return words[1]
+    for word in words:
+        if re.fullmatch(r"[a-d]", word):
+            return word
+    option_cues = {"option", "answer", "ans", "choose", "selected", "select"}
+    for index, word in enumerate(words[:-1]):
+        if word in option_cues and re.fullmatch(r"[a-d]", words[index + 1]):
+            return words[index + 1]
     return words[0]
 
 
@@ -230,3 +256,6 @@ def _first_number(text: str) -> float | None:
         return None
     return float(match.group(0))
 
+
+def _all_numbers(text: str) -> list[float]:
+    return [float(match.group(0)) for match in _NUMBER_RE.finditer(text)]
