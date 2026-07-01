@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Student Copy Grader</title>
-  <meta name="description" content="Free browser-based rubric grading tool for teachers. Grade student answers, save records locally, and export reports.">
+      <meta name="description" content="CBSE-focused handwritten copy grading assistant for teachers, coaching centres, and schools. Grade copies with teacher review, quality OCR, and reports.">
   <style>
     :root {
       --ink: #17130f;
@@ -156,7 +156,7 @@
     .panel-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .panel-body { padding: 16px; display: grid; gap: 12px; }
     label { display: grid; gap: 7px; color: var(--muted); font-size: 13px; font-weight: 800; }
-    textarea, input[type="text"], input[type="file"] {
+    textarea, input[type="text"], input[type="number"], input[type="file"] {
       width: 100%;
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -465,11 +465,66 @@
       padding: 10px 11px;
       outline: none;
     }
-    .quality-grid {
+    .quality-grid, .market-grid {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(320px, .55fr);
       gap: 16px;
       align-items: start;
+    }
+    .market-hero {
+      display: grid;
+      gap: 14px;
+    }
+    .market-kpis, .pricing-grid, .timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .market-kpi, .price-card, .timeline-card, .cost-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffdf8;
+      padding: 13px;
+    }
+    .market-kpi span, .price-card span, .timeline-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+    }
+    .market-kpi strong, .price-card strong {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+    .timeline-card strong { display: block; margin-bottom: 7px; }
+    .cost-card {
+      display: grid;
+      gap: 10px;
+      background: #f3faf6;
+      border-color: #b7d3c6;
+    }
+    .cost-result {
+      border-radius: 8px;
+      background: #241b14;
+      color: #fffdf8;
+      padding: 12px;
+      font-weight: 900;
+      line-height: 1.45;
+    }
+    .source-stack { display: grid; gap: 8px; margin-top: 12px; }
+    .source-stack a {
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: #faf5ed;
+      text-decoration: none;
+      font-weight: 850;
     }
     .decision-table td:first-child { font-weight: 850; }
     .source-note {
@@ -478,16 +533,16 @@
       line-height: 1.45;
     }
     @media (max-width: 1180px) {
-      .grader-layout, .record-grid, .report-layout, .ops-hero, .quality-grid { grid-template-columns: 1fr; }
+      .grader-layout, .record-grid, .report-layout, .ops-hero, .quality-grid, .market-grid { grid-template-columns: 1fr; }
       .ops-board { border-left: 0; border-top: 1px solid var(--line); }
-      .ops-pipeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .ops-pipeline, .market-kpis, .pricing-grid, .timeline-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
     @media (max-width: 780px) {
       .topbar { position: static; align-items: flex-start; flex-direction: column; }
       .top-actions, .tabs { justify-content: flex-start; }
       .workspace { padding: 14px; }
       .metrics, .two-col, .field-row, .guide-grid { grid-template-columns: 1fr; }
-      .ops-pipeline { grid-template-columns: 1fr; }
+      .ops-pipeline, .market-kpis, .pricing-grid, .timeline-grid { grid-template-columns: 1fr; }
       .score { font-size: 34px; }
     }
     @media print {
@@ -511,6 +566,7 @@
       <nav class="tabs" aria-label="Workspace tabs">
         <button class="tab active" data-tab="grade">Grade Copies</button>
         <button class="tab" data-tab="quality">Quality OCR</button>
+        <button class="tab" data-tab="market">Market Pilot</button>
         <button class="tab" data-tab="guide">How To Use</button>
         <button class="tab" data-tab="records">Class Records</button>
         <button class="tab" data-tab="report">Project Report</button>
@@ -528,9 +584,9 @@
     <main class="workspace">
       <section class="ops-hero" aria-label="Grading workflow">
         <div class="ops-copy">
-          <div class="ops-kicker">Teacher review first · AI assisted grading</div>
-          <h1 class="ops-title">Handwritten maths grading, built for real copy checking.</h1>
-          <p class="ops-summary">Use the free browser mode for demos and typed answers. For real student handwriting, connect the Quality OCR backend so Mathpix handles maths transcription and OpenAI applies the rubric with confidence flags.</p>
+          <div class="ops-kicker">CBSE and coaching pilot · Teacher review first</div>
+          <h1 class="ops-title">Handwritten Maths and Science copy checking for Indian schools.</h1>
+          <p class="ops-summary">Use this as a free demo and lead magnet. For paid pilots, connect the backend so admin staff can upload copies, Mathpix/OpenAI can suggest marks and deductions, and teachers approve final reports.</p>
           <div class="ops-pipeline" aria-label="Workflow steps">
             <div class="pipeline-step"><span>01</span><strong>Save paper and key once</strong></div>
             <div class="pipeline-step"><span>02</span><strong>Upload student copy</strong></div>
@@ -551,6 +607,10 @@
           <div class="provider-row">
             <div>Teacher review<small>Required for low confidence work</small></div>
             <span class="chip">Required</span>
+          </div>
+          <div class="provider-row">
+            <div>Paid pilot wedge<small>CBSE Class 10-12 schools and coaching centres</small></div>
+            <span class="chip">Rs plans</span>
           </div>
         </div>
       </section>
@@ -676,7 +736,7 @@
           </article>
           <aside class="article">
             <h2>Backend Contract</h2>
-            <p>The frontend calls this endpoint when Quality backend OCR is selected:</p>
+            <p>The frontend calls this OCR endpoint when Quality backend OCR is selected:</p>
             <pre>POST /api/ocr/extract
 files[]: image or PDF
 paper_text: saved paper
@@ -688,7 +748,77 @@ rubric_text: saved rubric</pre>
   "provider": "mathpix",
   "warnings": []
 }</pre>
+            <p>The paid-pilot backend also exposes exam, batch, submission, review, and report APIs for coaching-centre and school workflows.</p>
             <p class="source-note">Use backend-only keys. Do not place Mathpix or OpenAI keys in the GitHub Pages frontend.</p>
+          </aside>
+        </div>
+      </section>
+
+      <section class="view" id="view-market">
+        <div class="market-grid">
+          <article class="article market-hero">
+            <div class="guide-kicker">Indian market entry</div>
+            <h1>Build the wedge around CBSE copy checking.</h1>
+            <p>The strongest opening market is Class 10-12 CBSE schools and coaching centres. They run frequent written tests, parents expect clear reports, and the buyer cares about speed, consistency, and explainable marks.</p>
+
+            <div class="market-kpis">
+              <div class="market-kpi"><span>First buyer</span><strong>Coaching centres</strong><p>Fastest feedback and easier paid pilots.</p></div>
+              <div class="market-kpi"><span>First school user</span><strong>Maths/Science HOD</strong><p>High copy-checking workload and clear marking schemes.</p></div>
+              <div class="market-kpi"><span>Product promise</span><strong>Teacher approves</strong><p>AI suggests marks; teachers finalize them.</p></div>
+            </div>
+
+            <h2>What To Sell</h2>
+            <div class="support-list">
+              <div><strong>India-first workflow:</strong> upload question paper, answer key, solution/marking scheme, then batch upload student copies.</div>
+              <div><strong>CBSE style marking:</strong> step marks, alternate methods, partial credit, and deduction reasons.</div>
+              <div><strong>Admin-friendly operations:</strong> staff scan and upload copies; teachers review only flagged answers.</div>
+              <div><strong>Parent-ready output:</strong> question-wise marks, weak topics, and improvement notes in downloadable reports.</div>
+            </div>
+
+            <h2>90-Day Pilot</h2>
+            <div class="timeline-grid">
+              <div class="timeline-card"><span>0-30 days</span><strong>Proof demo</strong><p>Use one polished Class XII Maths paper and contact 30 coaching centres plus 30 school HODs.</p></div>
+              <div class="timeline-card"><span>31-60 days</span><strong>Real pilots</strong><p>Run 5-10 test batches, compare teacher marks, and measure minutes saved per copy.</p></div>
+              <div class="timeline-card"><span>61-90 days</span><strong>Paid conversion</strong><p>Convert 2-3 pilots into monthly or per-exam paid plans and publish an anonymized case study.</p></div>
+            </div>
+
+            <h2>Suggested Pricing</h2>
+            <div class="pricing-grid">
+              <div class="price-card"><span>Teacher</span><strong>Rs 999-1,999/mo</strong><p>For individual high-volume teachers and early adopters.</p></div>
+              <div class="price-card"><span>Coaching</span><strong>Rs 4,999-14,999/mo</strong><p>Best first revenue segment because they run frequent tests.</p></div>
+              <div class="price-card"><span>School</span><strong>Rs 25k-1.5L/year</strong><p>Annual plan by student strength, subjects, and exam volume.</p></div>
+            </div>
+          </article>
+
+          <aside class="article">
+            <h2>Batch Cost Calculator</h2>
+            <p>Use this during pilot calls to estimate provider cost before quoting a school or coaching centre.</p>
+            <div class="cost-card">
+              <label>Students<input type="number" id="calcStudents" min="1" value="40"></label>
+              <label>Pages Per Student<input type="number" id="calcPages" min="1" value="5"></label>
+              <label>AI Grading Cost Per Batch (Rs)<input type="number" id="calcAiCost" min="0" value="250"></label>
+              <div class="cost-result" id="calcResult">Estimated cost waiting.</div>
+            </div>
+
+            <h2>Backend APIs Now Available</h2>
+            <div class="support-list">
+              <div><strong>Exam:</strong> POST /api/exams</div>
+              <div><strong>Batch:</strong> POST /api/batches</div>
+              <div><strong>Copies:</strong> POST /api/submissions</div>
+              <div><strong>OCR:</strong> POST /api/submissions/{id}/ocr</div>
+              <div><strong>Grade:</strong> POST /api/submissions/{id}/grade</div>
+              <div><strong>Review:</strong> PATCH /api/grades/{id}/review</div>
+              <div><strong>Reports:</strong> GET /api/batches/{id}/reports</div>
+            </div>
+
+            <h2>Market Proof Sources</h2>
+            <div class="source-stack">
+              <a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2161543" target="_blank" rel="noreferrer">UDISE+ school scale</a>
+              <a href="https://www.cbse.gov.in/cbsenew/affiliation.html" target="_blank" rel="noreferrer">CBSE affiliated schools</a>
+              <a href="https://cograder.com/pricing/" target="_blank" rel="noreferrer">CoGrader pricing</a>
+              <a href="https://www.gradingpal.com/pricing" target="_blank" rel="noreferrer">GradingPal pricing</a>
+              <a href="https://www.ycombinator.com/companies/frizzle" target="_blank" rel="noreferrer">Frizzle YC signal</a>
+            </div>
           </aside>
         </div>
       </section>
@@ -742,7 +872,7 @@ Q3: 9.8</pre>
 Q2: White light splits into seven colours.
 Q3: 9.81 m/s^2</pre>
             <h2>Privacy</h2>
-            <p>Files are processed in the browser. The public GitHub Pages app does not store student copies on a server.</p>
+            <p>In free browser mode, files are processed on the teacher's device. In paid backend mode, schools must confirm consent before scans are stored, and submissions can be deleted through the backend privacy APIs.</p>
           </aside>
         </div>
       </section>
@@ -779,6 +909,8 @@ Q3: 9.81 m/s^2</pre>
             <p>Student Copy Grader is an open, free, local-first project for helping teachers check descriptive student answers against a question paper and marking scheme.</p>
             <h2>Demand</h2>
             <p>Teachers often check 40 or more handwritten copies per test. The pain is strongest when answers are descriptive, stepwise, or CBSE-style, because students and parents also need a clear reason for every deduction.</p>
+            <h2>Commercial Direction</h2>
+            <p>The open website remains the free demo and trust layer. The paid product is the quality backend for CBSE schools and coaching centres: batch uploads, Mathpix/OpenAI processing, teacher approval, reports, and class analytics.</p>
             <h2>Supply Gap</h2>
             <p>Commercial AI grading products exist, but many are paid, cloud-based, or institution-priced. Open-source OCR and grading models exist separately. This project joins the useful pieces into a teacher-facing workflow.</p>
             <h2>Current Website Scope</h2>
@@ -976,7 +1108,11 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       qualityStatus: document.querySelector("#qualityStatus"),
       qualityModeChip: document.querySelector("#qualityModeChip"),
       rubricFile: document.querySelector("#rubricFile"),
-      answersFile: document.querySelector("#answersFile")
+      answersFile: document.querySelector("#answersFile"),
+      calcStudents: document.querySelector("#calcStudents"),
+      calcPages: document.querySelector("#calcPages"),
+      calcAiCost: document.querySelector("#calcAiCost"),
+      calcResult: document.querySelector("#calcResult")
     };
     function loadState() {
       try {
@@ -1562,6 +1698,22 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       } else {
         setStatus(el.qualityStatus, "Browser OCR selected. Good for demos; weak for handwritten maths.", "");
       }
+    }
+    function updateCostCalculator() {
+      if (!el.calcResult) return;
+      const students = Math.max(1, Number(el.calcStudents?.value || 40));
+      const pages = Math.max(1, Number(el.calcPages?.value || 5));
+      const aiCost = Math.max(0, Number(el.calcAiCost?.value || 0));
+      const totalPages = students * pages;
+      const mathpixUsd = totalPages * 0.005;
+      const mathpixInr = mathpixUsd * 95;
+      const totalInr = Math.round(mathpixInr + aiCost);
+      const perStudent = Math.max(1, Math.round(totalInr / students));
+      el.calcResult.innerHTML = `
+        ${students} students x ${pages} pages = ${totalPages} pages<br>
+        Mathpix PDF OCR approx Rs ${Math.round(mathpixInr)} + AI grading Rs ${Math.round(aiCost)}<br>
+        Estimated provider cost: Rs ${totalInr} total, about Rs ${perStudent}/student.
+      `;
     }
     function backendUrl(path = "") {
       const base = (el.qualityBackendUrl.value || "").trim().replace(/\/+$/, "");
@@ -2202,9 +2354,13 @@ Q4: At x = 1, y = 1, so the point is (1,1). dy/dx = 2x, hence slope at x = 1 is 
       [el.paperText, el.solutionText, el.rubricText, el.answersText, el.studentId, el.studentName, el.ocrMode, el.qualityBackendUrl].forEach(input => {
         input.addEventListener(eventName, () => syncStateFromFields());
       });
+      [el.calcStudents, el.calcPages, el.calcAiCost].forEach(input => {
+        if (input) input.addEventListener(eventName, updateCostCalculator);
+      });
     });
     syncFieldsFromState();
     validateRubric();
+    updateCostCalculator();
     renderFileLists();
     renderRecords();
     renderMetrics();
